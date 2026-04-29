@@ -1,0 +1,1539 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Mein Reisespiel – WP Technik Klasse 8</title>
+  <style>
+    :root {
+      --col-slate-dark:   #2C3D4C;
+      --col-slate:        #3E5668;
+      --col-slate-mid:    #6A8599;
+      --col-slate-pale:   #D0DCE6;
+      --col-slate-ghost:  #EEF3F7;
+      --col-rust-dark:    #9E4E22;
+      --col-rust:         #D97A4A;
+      --col-rust-pale:    #F5DDD1;
+      --col-rust-ghost:   #FBF0EB;
+      --col-sage-dark:    #4D8B3F;
+      --col-sage:         #7DBB6F;
+      --col-sage-pale:    #DDF0D8;
+      --col-sage-ghost:   #F0FAF0;
+      --col-warning:      #C17B00;
+      --col-warning-pale: #FFF3CC;
+      --col-warning-text: #5C4400;
+      --col-bg:           #F5F4F1;
+      --col-white:        #FFFFFF;
+      --col-text:         #1E2A35;
+      --col-text-muted:   #5A6A78;
+      --col-border:       #D4D0C8;
+      --col-shadow:       rgba(62,86,104,0.12);
+      --sidebar-w:        248px;
+      --text-xs:   0.694rem;
+      --text-sm:   0.833rem;
+      --text-base: 1rem;
+      --text-md:   1.2rem;
+      --text-lg:   1.44rem;
+      --text-xl:   1.728rem;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif;
+      background: var(--col-bg);
+      color: var(--col-text);
+      font-size: var(--text-base);
+      line-height: 1.6;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    :focus-visible {
+      outline: 3px solid var(--col-slate);
+      outline-offset: 2px;
+      border-radius: 4px;
+    }
+
+    /* ── APP SHELL ── */
+    .app-header {
+      background: var(--col-slate);
+      color: white;
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      gap: 12px;
+    }
+    .app-header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .app-logo {
+      font-size: 1.4rem;
+      line-height: 1;
+    }
+    .app-title {
+      font-size: var(--text-md);
+      font-weight: 700;
+      line-height: 1.2;
+    }
+    .app-subtitle {
+      font-size: var(--text-xs);
+      color: var(--col-slate-pale);
+    }
+    .name-display {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,255,255,0.12);
+      border-radius: 20px;
+      padding: 5px 14px;
+      font-size: var(--text-sm);
+      cursor: pointer;
+      border: 1px solid rgba(255,255,255,0.2);
+      color: white;
+      transition: background 0.15s;
+    }
+    .name-display:hover { background: rgba(255,255,255,0.2); }
+
+    .app-body {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      width: var(--sidebar-w);
+      background: var(--col-slate-dark);
+      color: white;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      overflow-y: auto;
+    }
+
+    .progress-bar-wrap {
+      padding: 14px 16px 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .progress-label {
+      font-size: var(--text-xs);
+      color: var(--col-slate-pale);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 6px;
+    }
+    .progress-track {
+      height: 6px;
+      background: rgba(255,255,255,0.12);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: var(--col-sage);
+      border-radius: 3px;
+      transition: width 0.4s ease;
+    }
+    .progress-count {
+      font-size: var(--text-xs);
+      color: var(--col-slate-pale);
+      margin-top: 5px;
+      text-align: right;
+    }
+
+    .station-list {
+      flex: 1;
+      padding: 8px 0;
+    }
+    .station-btn {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      background: none;
+      border: none;
+      color: rgba(255,255,255,0.65);
+      cursor: pointer;
+      text-align: left;
+      transition: background 0.15s, color 0.15s;
+      position: relative;
+    }
+    .station-btn:hover { background: rgba(255,255,255,0.06); color: white; }
+    .station-btn.active {
+      background: rgba(255,255,255,0.12);
+      color: white;
+    }
+    .station-btn.active::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 3px;
+      background: var(--col-rust);
+      border-radius: 0 2px 2px 0;
+    }
+    .station-btn.done { color: rgba(255,255,255,0.5); }
+
+    .stn-num {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.1);
+      display: flex; align-items: center; justify-content: center;
+      font-size: var(--text-xs);
+      font-weight: 700;
+      flex-shrink: 0;
+      transition: background 0.2s;
+    }
+    .station-btn.active .stn-num { background: var(--col-rust-dark); color: white; }
+    .station-btn.done .stn-num   { background: var(--col-sage-dark); color: white; }
+    .done-check { display: none; }
+    .station-btn.done .done-check { display: inline; }
+    .station-btn.done .stn-num-text { display: none; }
+
+    .stn-info { flex: 1; min-width: 0; }
+    .stn-title {
+      font-size: var(--text-sm);
+      font-weight: 600;
+      line-height: 1.3;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .stn-phase {
+      font-size: var(--text-xs);
+      opacity: 0.6;
+      margin-top: 1px;
+    }
+
+    .sidebar-footer {
+      padding: 12px 16px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+    }
+    .reset-btn {
+      width: 100%;
+      background: none;
+      border: 1px solid rgba(255,255,255,0.15);
+      color: rgba(255,255,255,0.5);
+      padding: 7px;
+      border-radius: 8px;
+      font-size: var(--text-xs);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .reset-btn:hover { border-color: rgba(255,255,255,0.3); color: rgba(255,255,255,0.8); }
+
+    /* ── MAIN CONTENT ── */
+    .main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 28px 40px;
+      scroll-behavior: smooth;
+    }
+
+    /* Station header */
+    .station-header {
+      margin-bottom: 20px;
+    }
+    .station-meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+    .phase-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: var(--text-xs);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 3px 10px;
+      border-radius: 20px;
+      background: var(--col-slate-pale);
+      color: var(--col-slate-dark);
+    }
+    .ds-badge {
+      font-size: var(--text-xs);
+      color: var(--col-text-muted);
+    }
+    .station-title {
+      font-size: var(--text-xl);
+      font-weight: 800;
+      color: var(--col-slate-dark);
+      line-height: 1.2;
+    }
+
+    /* Ziel-Box */
+    .ziel-box {
+      background: var(--col-slate-ghost);
+      border-left: 4px solid var(--col-slate);
+      border-radius: 0 10px 10px 0;
+      padding: 14px 18px;
+      margin-bottom: 24px;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    .ziel-icon { font-size: 1.2rem; flex-shrink: 0; margin-top: 1px; }
+    .ziel-text {
+      font-size: var(--text-base);
+      color: var(--col-slate-dark);
+      font-weight: 500;
+    }
+    .ziel-label {
+      font-size: var(--text-xs);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--col-slate-mid);
+      margin-bottom: 2px;
+    }
+
+    /* ── LEVEL SECTIONS ── */
+    .level-section {
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 14px;
+      border: 2px solid transparent;
+    }
+
+    /* BASIS */
+    .level-basis { border-color: var(--col-slate-pale); }
+    .level-basis .level-head {
+      background: var(--col-slate);
+      color: white;
+      padding: 12px 18px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .level-basis .level-body { background: var(--col-white); }
+
+    /* VERTIEFUNG */
+    .level-vertiefung { border-color: var(--col-rust-pale); }
+    .level-vertiefung .level-head {
+      background: var(--col-rust-dark);
+      color: white;
+      padding: 12px 18px;
+      display: flex; align-items: center; gap: 10px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .level-vertiefung .level-body { background: var(--col-rust-ghost); }
+
+    /* HERAUSFORDERUNG */
+    .level-heraus { border-color: var(--col-sage-pale); }
+    .level-heraus .level-head {
+      background: var(--col-sage-dark);
+      color: white;
+      padding: 12px 18px;
+      display: flex; align-items: center; gap: 10px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .level-heraus .level-body { background: var(--col-sage-ghost); }
+
+    .level-icon { font-size: 1.3rem; flex-shrink: 0; }
+    .level-head-text { flex: 1; }
+    .level-name {
+      font-size: var(--text-xs);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      opacity: 0.85;
+    }
+    .level-tagline {
+      font-size: var(--text-sm);
+      font-weight: 600;
+      margin-top: 1px;
+    }
+    .level-toggle {
+      font-size: 1rem;
+      opacity: 0.8;
+      transition: transform 0.25s;
+      flex-shrink: 0;
+    }
+    .level-section.open .level-toggle { transform: rotate(180deg); }
+
+    .level-body {
+      padding: 16px 18px;
+    }
+    .level-section:not(.open) .level-body { display: none; }
+    .level-basis .level-body { display: block !important; } /* basis immer sichtbar */
+
+    /* Schritte */
+    .schritte-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .schritt-item {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+    .schritt-num {
+      width: 26px; height: 26px;
+      border-radius: 50%;
+      background: var(--col-slate-pale);
+      color: var(--col-slate-dark);
+      font-size: var(--text-xs);
+      font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .schritt-text {
+      font-size: var(--text-base);
+      line-height: 1.5;
+      flex: 1;
+    }
+    .schritt-text strong { color: var(--col-slate-dark); }
+
+    /* Tipp */
+    .tipp-details {
+      margin-top: 14px;
+      background: var(--col-slate-pale);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .tipp-summary {
+      padding: 10px 14px;
+      cursor: pointer;
+      font-size: var(--text-sm);
+      font-weight: 600;
+      color: var(--col-slate-dark);
+      list-style: none;
+      display: flex; gap: 6px; align-items: center;
+      user-select: none;
+    }
+    .tipp-summary::-webkit-details-marker { display: none; }
+    .tipp-content {
+      padding: 0 14px 12px;
+      font-size: var(--text-sm);
+      color: var(--col-slate-dark);
+      line-height: 1.55;
+    }
+
+    /* Vertiefungs-/Herausforderungstext */
+    .level-desc {
+      font-size: var(--text-base);
+      line-height: 1.55;
+      margin-bottom: 10px;
+    }
+    .level-aufgabe {
+      font-size: var(--text-base);
+      font-weight: 600;
+      color: var(--col-rust-dark);
+      line-height: 1.5;
+    }
+    .level-heraus .level-aufgabe { color: var(--col-sage-dark); }
+
+    /* Bild-Platzhalter */
+    .img-placeholder {
+      width: 100%;
+      max-width: 420px;
+      height: 160px;
+      background: var(--col-slate-ghost);
+      border: 2px dashed var(--col-slate-pale);
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      margin: 14px 0 4px;
+      color: var(--col-slate-mid);
+    }
+    .img-placeholder .img-icon { font-size: 2rem; }
+    .img-placeholder .img-label {
+      font-size: var(--text-sm);
+      font-weight: 600;
+    }
+    .img-placeholder .img-hint {
+      font-size: var(--text-xs);
+      color: var(--col-slate-mid);
+      opacity: 0.7;
+    }
+
+    /* ── CHECKLISTE ── */
+    .checkliste-section {
+      background: var(--col-white);
+      border: 2px solid var(--col-border);
+      border-radius: 12px;
+      padding: 16px 18px;
+      margin-bottom: 14px;
+    }
+    .checkliste-title {
+      font-size: var(--text-sm);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--col-text-muted);
+      margin-bottom: 12px;
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+    .check-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .check-item:last-child { margin-bottom: 0; }
+    .check-item input[type="checkbox"] {
+      width: 20px; height: 20px;
+      border-radius: 4px;
+      accent-color: var(--col-sage-dark);
+      flex-shrink: 0;
+      margin-top: 2px;
+      cursor: pointer;
+    }
+    .check-label {
+      font-size: var(--text-base);
+      cursor: pointer;
+      line-height: 1.4;
+    }
+    .check-item.checked .check-label {
+      text-decoration: line-through;
+      color: var(--col-text-muted);
+    }
+
+    /* ── NOTIZFELD ── */
+    .notiz-section {
+      margin-bottom: 22px;
+    }
+    .notiz-label {
+      font-size: var(--text-sm);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--col-text-muted);
+      margin-bottom: 8px;
+      display: flex; gap: 6px; align-items: center;
+    }
+    .notiz-textarea {
+      width: 100%;
+      min-height: 90px;
+      padding: 12px 14px;
+      border: 2px solid var(--col-border);
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: var(--text-base);
+      color: var(--col-text);
+      background: var(--col-white);
+      resize: vertical;
+      transition: border-color 0.2s;
+      line-height: 1.5;
+    }
+    .notiz-textarea:focus {
+      border-color: var(--col-slate);
+      outline: none;
+    }
+    .notiz-textarea::placeholder { color: #aaa; }
+
+    /* ── ABSCHLUSS-BUTTON ── */
+    .station-actions {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .btn-abschliessen {
+      background: var(--col-sage-dark);
+      color: white;
+      border: none;
+      padding: 13px 24px;
+      border-radius: 10px;
+      font-size: var(--text-base);
+      font-weight: 700;
+      cursor: pointer;
+      display: flex; gap: 8px; align-items: center;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .btn-abschliessen:hover { background: #3d7032; }
+    .btn-abschliessen:active { transform: scale(0.98); }
+    .btn-abschliessen.done-state {
+      background: var(--col-slate-pale);
+      color: var(--col-slate-dark);
+      cursor: default;
+    }
+    .btn-weiter {
+      background: var(--col-slate);
+      color: white;
+      border: none;
+      padding: 13px 20px;
+      border-radius: 10px;
+      font-size: var(--text-base);
+      font-weight: 600;
+      cursor: pointer;
+      display: flex; gap: 6px; align-items: center;
+      transition: background 0.15s;
+    }
+    .btn-weiter:hover { background: var(--col-slate-dark); }
+    .btn-weiter[hidden] { display: none; }
+
+    /* ── WELCOME SCREEN ── */
+    .welcome-screen {
+      max-width: 540px;
+      margin: 0 auto;
+      padding: 20px 0;
+    }
+    .welcome-hero {
+      text-align: center;
+      padding: 32px 24px 28px;
+      background: var(--col-white);
+      border-radius: 16px;
+      border: 2px solid var(--col-border);
+      margin-bottom: 20px;
+      box-shadow: 0 4px 16px var(--col-shadow);
+    }
+    .welcome-emoji { font-size: 3.5rem; margin-bottom: 14px; }
+    .welcome-title {
+      font-size: var(--text-xl);
+      font-weight: 800;
+      color: var(--col-slate-dark);
+      margin-bottom: 8px;
+    }
+    .welcome-desc {
+      font-size: var(--text-base);
+      color: var(--col-text-muted);
+      line-height: 1.6;
+      max-width: 400px;
+      margin: 0 auto 24px;
+    }
+    .name-input-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 20px;
+      text-align: left;
+    }
+    .name-input-wrap label {
+      font-size: var(--text-sm);
+      font-weight: 600;
+      color: var(--col-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .name-input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid var(--col-border);
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: var(--text-md);
+      color: var(--col-text);
+      background: var(--col-bg);
+      transition: border-color 0.2s;
+    }
+    .name-input:focus { border-color: var(--col-slate); outline: none; }
+
+    .level-legend {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: var(--text-sm);
+    }
+    .legend-item.basis    { background: var(--col-slate-ghost); border: 1px solid var(--col-slate-pale); }
+    .legend-item.vertief  { background: var(--col-rust-ghost);  border: 1px solid var(--col-rust-pale);  }
+    .legend-item.heraus   { background: var(--col-sage-ghost);  border: 1px solid var(--col-sage-pale);  }
+    .legend-dot {
+      width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0;
+    }
+    .legend-item.basis   .legend-dot { background: var(--col-slate); }
+    .legend-item.vertief .legend-dot { background: var(--col-rust-dark); }
+    .legend-item.heraus  .legend-dot { background: var(--col-sage-dark); }
+    .legend-name { font-weight: 700; color: var(--col-text); min-width: 120px; }
+    .legend-desc { color: var(--col-text-muted); }
+
+    .btn-start {
+      width: 100%;
+      background: var(--col-rust-dark);
+      color: white;
+      border: none;
+      padding: 15px;
+      border-radius: 12px;
+      font-size: var(--text-md);
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-start:hover { background: #b85a28; }
+
+    /* Done-Overlay */
+    .done-banner {
+      display: none;
+      background: var(--col-sage-pale);
+      border: 2px solid var(--col-sage);
+      border-radius: 12px;
+      padding: 14px 18px;
+      margin-bottom: 18px;
+      color: var(--col-sage-dark);
+      font-weight: 600;
+      font-size: var(--text-base);
+      gap: 10px;
+      align-items: center;
+    }
+    .done-banner.visible { display: flex; }
+
+    /* Abschlusskarte (alle 7 fertig) */
+    .finale-card {
+      background: var(--col-white);
+      border: 2px solid var(--col-sage);
+      border-radius: 16px;
+      padding: 32px;
+      text-align: center;
+      box-shadow: 0 4px 20px var(--col-shadow);
+      margin: 20px 0;
+    }
+    .finale-emoji { font-size: 3rem; margin-bottom: 12px; }
+    .finale-title {
+      font-size: var(--text-xl);
+      font-weight: 800;
+      color: var(--col-sage-dark);
+      margin-bottom: 8px;
+    }
+    .finale-desc {
+      font-size: var(--text-base);
+      color: var(--col-text-muted);
+      line-height: 1.6;
+      max-width: 420px;
+      margin: 0 auto;
+    }
+
+    .print-btn {
+      width: 100%;
+      background: var(--col-rust-dark);
+      color: white;
+      border: none;
+      padding: 10px;
+      border-radius: 8px;
+      font-size: var(--text-sm);
+      font-weight: 700;
+      cursor: pointer;
+      margin-bottom: 8px;
+      transition: background 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .print-btn:hover { background: #b85a28; }
+
+    /* TinkerCAD Link-Card */
+    .tinkercad-link-card {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: #1a73e8;
+      color: white;
+      border-radius: 12px;
+      padding: 18px 20px;
+      margin-bottom: 16px;
+      text-decoration: none;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .tinkercad-link-card:hover { background: #1558c0; transform: translateY(-1px); }
+    .tc-icon { font-size: 1.8rem; flex-shrink: 0; }
+    .tc-text { flex: 1; }
+    .tc-label { font-weight: 700; font-size: var(--text-md); margin-bottom: 2px; }
+    .tc-url { font-size: var(--text-sm); opacity: 0.85; margin-bottom: 4px; }
+    .tc-code { font-size: var(--text-sm); background: rgba(255,255,255,0.15); padding: 4px 10px; border-radius: 20px; display: inline-block; }
+    .tc-arrow { font-size: 1.4rem; opacity: 0.7; flex-shrink: 0; }
+    @media print {
+      body { height: auto; overflow: visible; font-size: 11pt; background: white; }
+      .app-header, .sidebar { display: none !important; }
+      .app-body { display: block; }
+      .main { padding: 0; overflow: visible; }
+      .level-body { display: block !important; }
+      .done-banner, .station-actions, .img-placeholder { display: none !important; }
+      .tinkercad-link-card { background: #eee !important; color: black !important; border-radius: 0; }
+      .station-title { font-size: 14pt; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- APP HEADER -->
+<header class="app-header">
+  <div class="app-header-left">
+    <div class="app-logo">🖨️</div>
+    <div>
+      <div class="app-title">Mein Reisespiel</div>
+      <div class="app-subtitle">WP Technik · Klasse 8 · HBG Dortmund</div>
+    </div>
+  </div>
+  <button class="name-display" onclick="editName()" aria-label="Namen ändern">
+    <span>👤</span>
+    <span id="header-name">Name eingeben …</span>
+  </button>
+</header>
+
+<div class="app-body">
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar" aria-label="Stationen">
+    <div class="progress-bar-wrap">
+      <div class="progress-label">Dein Fortschritt</div>
+      <div class="progress-track">
+        <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+      </div>
+      <div class="progress-count" id="progress-count">0 von 7 Stationen</div>
+    </div>
+    <div class="station-list" id="station-list"></div>
+    <div class="sidebar-footer">
+      <button class="print-btn" onclick="printResults()" aria-label="Ergebnisse als PDF speichern">
+        🖨️ Als PDF speichern
+      </button>
+      <button class="reset-btn" onclick="confirmReset()">⚠️ Fortschritt zurücksetzen</button>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <main class="main" id="main-content" aria-live="polite"></main>
+
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════
+   DATEN
+═══════════════════════════════════════════════════════ */
+const STATIONS = [
+  {
+    id: 1,
+    icon: '🔍',
+    phase: 'Erkunden',
+    ds: 'Doppelstunde 1',
+    title: 'TinkerCAD kennenlernen',
+    ziel: 'Du kannst dich in TinkerCAD einloggen und weißt, wie die wichtigsten Werkzeuge funktionieren.',
+    tutorial: true,
+    basis: {
+      schritte: [
+        { text: '<strong>Tritt der Klasse bei:</strong> Öffne tinkercad.com/joinclass/K3IRBHDGF – oder scanne den QR-Code. Dein Zugangscode ist <strong>dein Vorname in Kleinbuchstaben</strong>.', img: 'anmelden.png' },
+        { text: '<strong>Mach das TinkerCAD-Tutorial.</strong> Es führt dich Schritt für Schritt durch alle wichtigen Werkzeuge. Folge einfach den Anweisungen auf dem Bildschirm.' },
+        { text: 'Wenn du fertig bist: <strong>Zeig der Lehrkraft</strong> dein erstes fertiges Modell.' },
+      ],
+      tipp: null,
+      bild: null,
+    },
+    vertiefung: null,
+    herausforderung: null,
+    checkliste: [
+      'Ich bin in der TinkerCAD-Klasse eingeloggt.',
+      'Ich habe das Tutorial abgeschlossen.',
+      'Mein erstes Modell ist gespeichert.',
+    ],
+    notizPrompt: 'Was war neu für mich? Was hat gut geklappt?',
+  },
+  {
+    id: 2,
+    icon: '✏️',
+    phase: 'Planen',
+    ds: 'Doppelstunde 2',
+    title: 'Spielidee & Planung',
+    ziel: 'Du weißt genau, was du bauen willst – und hast alle Teile mit Maßen skizziert.',
+    basis: {
+      schritte: [
+        { text: 'Wähle eines der bekannten Spiele: <strong>Tic Tac Toe, Vier Gewinnt, Mühle oder Domino.</strong>' },
+        { text: 'Schreibe auf einem Blatt auf: Welche Teile brauchst du? Wie viele? (Das ist deine <strong>Stückliste</strong>.)' },
+        { text: 'Skizziere alle Teile auf <strong>weißem Papier</strong> und schreibe die Maße dazu (in mm). Das ist deine Vorlage für TinkerCAD.' },
+        { text: '<strong>Reise-Check:</strong> Passen alle Teile in eine Hosentasche? Kein einzelnes Teil darf größer als 200×200 mm sein.' },
+      ],
+      tipp: 'Fang einfach an – du kannst die Maße später noch anpassen. Wichtig ist, dass du eine Skizze hast, bevor du anfängst zu modellieren.',
+      bild: null,
+    },
+    vertiefung: {
+      intro: 'Du willst kein fertiges Spiel nachbauen, sondern etwas Eigenes erfinden?',
+      aufgabe: 'Entwickle dein <strong>eigenes Reisespiel</strong>: Schreib die Regeln auf (max. 5 Sätze), skizziere alle Teile und lege Maße fest. Zeig der Lehrkraft, bevor du weitermachst.',
+    },
+    herausforderung: {
+      intro: 'Du hast dein Spiel geplant und willst noch mehr?',
+      aufgabe: 'Plane zusätzlich eine <strong>Aufbewahrungsbox</strong> für alle Spielteile. Skizziere sie mit Maßen – sie soll später auch in TinkerCAD gebaut werden. Denk daran: Der Deckel muss auch passen.',
+    },
+    checkliste: [
+      'Ich habe mein Spiel gewählt.',
+      'Meine Stückliste ist vollständig (alle Teile, Anzahl, Maße).',
+      'Alle Teile sind auf weißem Papier skizziert und bemaßt.',
+      'Die Lehrkraft hat meine Planung freigegeben. ✓',
+    ],
+    notizPrompt: 'Welches Spiel baue ich – und warum habe ich das gewählt?',
+  },
+  {
+    id: 3,
+    icon: '🎲',
+    phase: 'Konstruieren',
+    ds: 'Doppelstunde 3',
+    title: 'Spielfeld bauen',
+    ziel: 'Dein Spielfeld ist in TinkerCAD fertig und als STL-Datei gespeichert.',
+    basis: {
+      schritte: [
+        { text: 'Starte ein <strong>neues TinkerCAD-Projekt</strong> und nenn es sinnvoll (z.B. „mein-spielfeld").' },
+        { text: 'Bau den Grundkörper deines Spielfelds nach deiner Skizze. <strong>Tipp: Maße immer eintippen</strong>, nicht ziehen.' },
+        { text: 'Nutze die <strong>Loch-Funktion</strong> für Felder oder Vertiefungen. Danach alles gruppieren (Strg+G).', imgPair: ['gruppieren.png', 'fertige-bohrung.png'] },
+        { text: 'Exportiere als <strong>STL-Datei</strong>: oben rechts auf „Exportieren" → „Für 3D-Druck".' },
+      ],
+      tipp: 'Strg+Z macht jeden Schritt rückgängig. Nutze es oft!',
+      bild: null,
+    },
+    vertiefung: {
+      intro: 'Dein Spielfeld ist fertig?',
+      aufgabe: 'Füge einen <strong>erhöhten Rand</strong> (3–4 mm) hinzu, damit die Figuren nicht wegrutschen. Achte auf Innen- und Außenmaß.',
+    },
+    herausforderung: {
+      intro: 'Du willst dein Spielfeld individueller gestalten?',
+      aufgabe: 'Füge deinen <strong>Spielnamen als 3D-Text</strong> am Rand ein – erhaben oder vertieft. Nutze die Text-Form aus der Bibliothek.',
+    },
+    checkliste: [
+      'Mein Spielfeld ist in TinkerCAD modelliert.',
+      'Die Maße passen zur Skizze.',
+      'Die STL-Datei ist gespeichert.',
+    ],
+    notizPrompt: 'Was war heute knifflig? Wie habe ich es gelöst?',
+  },
+  {
+    id: 4,
+    icon: '♟️',
+    phase: 'Konstruieren',
+    ds: 'Doppelstunde 4',
+    title: 'Spielfiguren & alle Teile',
+    ziel: 'Alle Teile aus deiner Stückliste sind modelliert und als STL-Dateien gespeichert.',
+    basis: {
+      schritte: [
+        { text: 'Baue deine <strong>Spielfiguren</strong> nach der Skizze. Gleiche Figuren nur einmal bauen – dann kopieren (Strg+D).' },
+        { text: '<strong>Wichtig:</strong> Wenn eine Figur in eine Vertiefung passen soll, mach sie 0,2–0,3 mm kleiner als die Aussparung.' },
+        { text: 'Hak deine <strong>Stückliste</strong> ab: Ist wirklich alles modelliert?' },
+        { text: 'Alle Teile als <strong>STL exportieren</strong> und sinnvoll benennen.', imgPair: ['export1.png', 'export2.png'] },
+      ],
+      tipp: 'Mehrere gleiche Figuren kannst du nebeneinander in einem Projekt anordnen und zusammen als eine STL exportieren – spart Zeit beim Druck.',
+      bild: null,
+    },
+    vertiefung: {
+      intro: 'Alle Figuren sind fertig?',
+      aufgabe: 'Mach die zwei Spieler-Figuren <strong>unterschiedlich in der Form</strong> (z.B. Zylinder vs. Kegel), damit man sie gut unterscheiden kann. Beide sollen gleich groß sein.',
+    },
+    herausforderung: {
+      intro: 'Du willst noch mehr bauen?',
+      aufgabe: 'Bau eine kleine <strong>Aufbewahrungsbox</strong> für alle Figuren – mit einem passenden Deckel. Denk an den Toleranzabstand beim Deckel.',
+    },
+    checkliste: [
+      'Alle Teile aus der Stückliste sind modelliert.',
+      'Toleranzmaße sind berücksichtigt.',
+      'Alle STL-Dateien sind gespeichert und benannt.',
+    ],
+    notizPrompt: 'Wie viele STL-Dateien habe ich? Was bedeutet Toleranz beim 3D-Druck?',
+  },
+  {
+    id: 5,
+    icon: '⚙️',
+    phase: 'Drucken',
+    ds: 'Doppelstunde 5',
+    title: 'STL exportieren & hochladen',
+    ziel: 'Alle deine STL-Dateien sind in der IServ-Aufgabe hochgeladen – die Lehrkraft übernimmt den Druck.',
+    basis: {
+      schritte: [
+        { text: 'Öffne jedes deiner TinkerCAD-Projekte und exportiere alle Teile als <strong>STL-Datei</strong> (oben rechts → „Exportieren" → „Für 3D-Druck").' },
+        { text: 'Benenne die Dateien sinnvoll, z.B. <strong>spielfeld.stl</strong> und <strong>figur_x.stl</strong> – damit man weiß, was was ist.' },
+        { text: 'Lade alle STL-Dateien in die <strong>IServ-Aufgabe „3D-Druck Upload"</strong> hoch.' },
+        { text: 'Geh zur Lehrkraft und <strong>schau beim Slicen zu</strong> – sie erklärt, was der Slicer mit deiner Datei macht.' },
+      ],
+      tipp: 'Prüfe vorher noch mal: Hast du wirklich alle Teile aus deiner Stückliste exportiert? Eine vergessene Datei bedeutet Wartezeit!',
+      bild: null,
+    },
+    vertiefung: {
+      intro: 'Während du wartest, dass dein Druck startet:',
+      aufgabe: 'Schau der Lehrkraft beim Slicen genau zu. Notiere: Wie lange dauert der Druck deines größten Teils? Was passiert, wenn man den <strong>Infill-Wert erhöht</strong> – was ändert sich an Zeit und Stabilität?',
+    },
+    herausforderung: {
+      intro: 'Du willst mehr über den Druckprozess verstehen?',
+      aufgabe: 'Frag die Lehrkraft, ob du dein Modell selbst in Cura laden darfst. Ordne <strong>mehrere Figuren gleichzeitig</strong> auf dem Druckbett an. Erkläre: Warum spart das Zeit?',
+    },
+    checkliste: [
+      'Alle STL-Dateien sind sinnvoll benannt.',
+      'Alle Dateien sind in IServ hochgeladen.',
+      'Ich habe beim Slicen zugeschaut und verstanden, was passiert.',
+    ],
+    notizPrompt: 'Was macht ein Slicer – erkläre es in zwei Sätzen.',
+  },
+  {
+    id: 6,
+    icon: '🔧',
+    phase: 'Fertigen',
+    ds: 'Doppelstunde 6',
+    title: 'Prüfen & Verbessern',
+    ziel: 'Dein Spiel ist gedruckt, getestet und du weißt, was du beim nächsten Mal besser machen würdest.',
+    basis: {
+      schritte: [
+        { text: 'Nimm die Teile <strong>vorsichtig</strong> vom Druckbett (Spachtel von der Seite). Supports mit Zange entfernen.' },
+        { text: 'Miss die wichtigsten Maße mit dem <strong>Messschieber</strong>. Stimmen sie mit der Skizze überein?' },
+        { text: '<strong>Passtest:</strong> Passen Figuren und Spielfeld zusammen? Was klappt, was nicht?' },
+        { text: 'Spiele eine <strong>Proberunde</strong> mit jemandem. Macht es Spaß? Funktioniert alles?' },
+      ],
+      tipp: 'Wenn Teile nicht passen – kein Problem! Das gehört dazu. Notiere, was falsch ist, und korrigiere das Modell.',
+      bild: null,
+    },
+    vertiefung: {
+      intro: 'Du willst genau dokumentieren, was gepasst hat?',
+      aufgabe: 'Füll eine <strong>Tabelle</strong> aus: Soll-Maß | Ist-Maß | Abweichung | Was ich ändere. Für jedes wichtige Bauteil.',
+    },
+    herausforderung: {
+      intro: 'Du willst selbst entscheiden, was nachgedruckt wird?',
+      aufgabe: 'Bewerte jedes Teil mit 1–5 (Qualität, Passung, Funktion). <strong>Begründe schriftlich</strong>: Was wird nachgedruckt – und warum? Was ist gut genug?',
+    },
+    checkliste: [
+      'Alle Teile sind vom Druckbett entnommen.',
+      'Ich habe Maße gemessen und mit der Skizze verglichen.',
+      'Eine Proberunde wurde gespielt.',
+      'Verbesserungen sind notiert.',
+    ],
+    notizPrompt: 'Was hat gut geklappt? Was würde ich beim nächsten Druck anders machen?',
+  },
+  {
+    id: 7,
+    icon: '🎤',
+    phase: 'Reflektieren',
+    ds: 'Doppelstunde 7',
+    title: 'Vorstellen & Reflektieren',
+    ziel: 'Du hast dein Spiel vorgestellt und kannst erklären, was du in dieser Reihe gelernt hast.',
+    basis: {
+      schritte: [
+        { text: 'Stell dein Spiel in <strong>2 Minuten</strong> vor: Wie funktioniert es? Aus wie vielen Teilen besteht es?' },
+        { text: 'Erkläre <strong>eine Entscheidung</strong>, die du beim Bauen getroffen hast – und warum.' },
+        { text: 'Nenne <strong>eine Sache</strong>, die nicht geklappt hat – und was du daraus gelernt hast.' },
+        { text: 'Geh zu <strong>zwei anderen Spielen</strong> und gib Feedback auf der Karte: Was gefällt dir? Was würdest du verändern?' },
+      ],
+      tipp: 'Fang mit dem Spiel an, nicht mit der Technik. Deine Mitschüler:innen wollen zuerst wissen: Macht das Spaß?',
+    },
+    vertiefung: {
+      intro: 'Du willst tiefer vergleichen?',
+      aufgabe: 'Vergleiche dein Spiel mit einem <strong>gekauften Original</strong> (z.B. echtes Tic Tac Toe). Was ist bei deinem besser? Was schlechter? Je zwei Punkte.',
+    },
+    herausforderung: {
+      intro: 'Du planst schon Version 2.0?',
+      aufgabe: 'Skizziere oder beschreibe <strong>2–3 konkrete Verbesserungen</strong> für die nächste Version deines Spiels. Begründe jede Änderung.',
+    },
+    checkliste: [
+      'Ich habe mein Spiel vorgestellt.',
+      'Ich habe bei zwei Mitschüler:innen Feedback gegeben.',
+      'Der Reflexionsbogen ist ausgefüllt.',
+      'Meine Mappe ist abgegeben.',
+    ],
+    notizPrompt: 'Was nehme ich aus dieser Reihe mit?',
+  },
+];
+
+/* ═══════════════════════════════════════════════════════
+   STATE & LOCALSTORAGE
+═══════════════════════════════════════════════════════ */
+const LS = {
+  get: k => { try { return JSON.parse(localStorage.getItem('reisespiel_' + k)); } catch { return null; } },
+  set: (k, v) => { try { localStorage.setItem('reisespiel_' + k, JSON.stringify(v)); } catch {} },
+};
+
+let state = {
+  name:    LS.get('name')    || '',
+  current: LS.get('current') ?? -1,   // -1 = Welcome
+  done:    LS.get('done')    || {},    // { "1": true, ... }
+  checks:  LS.get('checks')  || {},    // { "1_0": true, ... }
+  notes:   LS.get('notes')   || {},    // { "1": "text" }
+};
+
+function save() {
+  LS.set('name',    state.name);
+  LS.set('current', state.current);
+  LS.set('done',    state.done);
+  LS.set('checks',  state.checks);
+  LS.set('notes',   state.notes);
+}
+
+/* ═══════════════════════════════════════════════════════
+   SIDEBAR
+═══════════════════════════════════════════════════════ */
+function renderSidebar() {
+  const list = document.getElementById('station-list');
+  list.innerHTML = '';
+  STATIONS.forEach(s => {
+    const isDone   = !!state.done[s.id];
+    const isActive = state.current === s.id;
+    const btn = document.createElement('button');
+    btn.className = 'station-btn' + (isActive ? ' active' : '') + (isDone ? ' done' : '');
+    btn.setAttribute('aria-current', isActive ? 'page' : 'false');
+    btn.innerHTML = `
+      <div class="stn-num">
+        <span class="done-check" aria-hidden="true">✓</span>
+        <span class="stn-num-text">${s.id}</span>
+      </div>
+      <div class="stn-info">
+        <div class="stn-title">${s.title}</div>
+        <div class="stn-phase">${s.phase} · ${s.ds}</div>
+      </div>`;
+    btn.onclick = () => { state.current = s.id; save(); renderSidebar(); renderMain(); };
+    list.appendChild(btn);
+  });
+
+  // Progress
+  const doneCount = Object.keys(state.done).length;
+  const pct = Math.round((doneCount / 7) * 100);
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-count').textContent = `${doneCount} von 7 Stationen`;
+
+  // Name in header
+  document.getElementById('header-name').textContent = state.name || 'Name eingeben …';
+}
+
+/* ═══════════════════════════════════════════════════════
+   MAIN CONTENT
+═══════════════════════════════════════════════════════ */
+function renderMain() {
+  const main = document.getElementById('main-content');
+  main.scrollTop = 0;
+
+  if (state.current === -1) {
+    renderWelcome(main);
+  } else {
+    const station = STATIONS.find(s => s.id === state.current);
+    if (station) renderStation(main, station);
+  }
+}
+
+/* WELCOME */
+function renderWelcome(main) {
+  const doneCount = Object.keys(state.done).length;
+  if (doneCount === 7) {
+    main.innerHTML = `
+      <div class="finale-card">
+        <div class="finale-emoji">🏆</div>
+        <div class="finale-title">Dein Reisespiel ist fertig!</div>
+        <p class="finale-desc">Du hast alle 7 Stationen abgeschlossen – von der ersten Idee über das TinkerCAD-Modell bis zum fertigen, gedruckten Spiel. Das ist echter Prototypen-Designprozess. Glückwunsch! 🎉</p>
+      </div>`;
+    return;
+  }
+
+  main.innerHTML = `
+    <div class="welcome-screen">
+      <div class="welcome-hero">
+        <div class="welcome-emoji">🖨️</div>
+        <div class="welcome-title">Willkommen zu deinem Reisespiel-Projekt!</div>
+        <p class="welcome-desc">In dieser Unterrichtsreihe planst du ein kleines Spiel, baust es in TinkerCAD nach – und druckst es wirklich aus. Schritt für Schritt.</p>
+        <div class="name-input-wrap">
+          <label for="welcome-name">Dein Name</label>
+          <input type="text" id="welcome-name" class="name-input" placeholder="Vorname eingeben …" value="${state.name}" maxlength="40" autocomplete="off">
+        </div>
+      </div>
+
+      <div class="level-legend">
+        <div class="legend-item basis">
+          <div class="legend-dot"></div>
+          <div class="legend-name">🟦 Basis</div>
+          <div class="legend-desc">Das musst du schaffen – die wichtigsten Schritte, klar erklärt.</div>
+        </div>
+        <div class="legend-item vertief">
+          <div class="legend-dot"></div>
+          <div class="legend-name">🟧 Vertiefung</div>
+          <div class="legend-desc">Du bist früh fertig? Hier wird's interessanter.</div>
+        </div>
+        <div class="legend-item heraus">
+          <div class="legend-dot"></div>
+          <div class="legend-name">🟩 Herausforderung</div>
+          <div class="legend-desc">Für echte Tüftlerinnen und Tüftler – offen und kreativ.</div>
+        </div>
+      </div>
+
+      <button class="btn-start" onclick="startApp()">🚀 Projekt starten</button>
+    </div>`;
+}
+
+function startApp() {
+  const input = document.getElementById('welcome-name');
+  if (input) state.name = input.value.trim();
+  state.current = 1;
+  save();
+  renderSidebar();
+  renderMain();
+}
+
+/* STATION */
+function renderStation(main, s) {
+  const isDone     = !!state.done[s.id];
+  const noteVal    = state.notes[s.id] || '';
+  const nextStation = STATIONS.find(st => st.id === s.id + 1);
+
+  // Checkliste HTML
+  const checkHTML = s.checkliste.map((text, i) => {
+    const key     = `${s.id}_${i}`;
+    const checked = !!state.checks[key];
+    return `
+      <div class="check-item${checked ? ' checked' : ''}" id="ci-wrap-${key}">
+        <input type="checkbox" id="ci-${key}" ${checked ? 'checked' : ''} onchange="toggleCheck('${key}', ${s.id})">
+        <label class="check-label" for="ci-${key}">${text}</label>
+      </div>`;
+  }).join('');
+
+  const schritteHTML = s.basis.schritte.map((sc, i) => {
+    const imgHTML = sc.img
+      ? `<img src="${sc.img}" alt="" style="display:block; max-width:100%; max-height:220px; border-radius:8px; margin-top:10px; border:1px solid var(--col-border);">`
+      : sc.imgPair
+      ? `<div style="display:flex; gap:10px; margin-top:10px; flex-wrap:wrap;">
+           <img src="${sc.imgPair[0]}" alt="" style="flex:1; min-width:0; max-height:200px; object-fit:contain; border-radius:8px; border:1px solid var(--col-border);">
+           <img src="${sc.imgPair[1]}" alt="" style="flex:1; min-width:0; max-height:200px; object-fit:contain; border-radius:8px; border:1px solid var(--col-border);">
+         </div>`
+      : '';
+    return `
+    <li class="schritt-item">
+      <div class="schritt-num">${i + 1}</div>
+      <div class="schritt-text">${sc.text}${imgHTML}</div>
+    </li>`;
+  }).join('');
+
+  // Bild-Platzhalter (nur noch wenn bild gesetzt – sonst nichts)
+  const bildHTML = s.basis.bild ? `
+    <div class="img-placeholder" role="img" aria-label="${s.basis.bild.label}">
+      <div class="img-icon">🖼️</div>
+      <div class="img-label">${s.basis.bild.label}</div>
+      <div class="img-hint">${s.basis.bild.hint}</div>
+    </div>` : '';
+
+  // Tipp
+  const tippHTML = s.basis.tipp ? `
+    <details class="tipp-details">
+      <summary class="tipp-summary">💡 Tipp anzeigen</summary>
+      <div class="tipp-content">${s.basis.tipp}</div>
+    </details>` : '';
+
+  // Weiter-Button
+  const weiterHTML = nextStation ? `
+    <button class="btn-weiter" onclick="goToStation(${nextStation.id})" ${!isDone ? 'hidden' : ''} id="btn-weiter">
+      Weiter: Station ${nextStation.id} →
+    </button>` : '';
+
+  main.innerHTML = `
+    <!-- Done-Banner -->
+    <div class="done-banner ${isDone ? 'visible' : ''}" id="done-banner" role="status">
+      ✅ Du hast diese Station abgeschlossen!
+    </div>
+
+    <!-- Station Header -->
+    <div class="station-header">
+      <div class="station-meta">
+        <span class="phase-badge">${s.icon} ${s.phase}</span>
+        <span class="ds-badge">${s.ds}</span>
+      </div>
+      <h1 class="station-title">${s.title}</h1>
+    </div>
+
+    <!-- Ziel -->
+    <div class="ziel-box">
+      <div class="ziel-icon">🎯</div>
+      <div>
+        <div class="ziel-label">Dein Ziel heute</div>
+        <div class="ziel-text">${s.ziel}</div>
+      </div>
+    </div>
+
+    ${s.tutorial ? `
+    <!-- TUTORIAL-STATION: Kein Level-System -->
+    <a class="tinkercad-link-card" href="https://www.tinkercad.com/joinclass/K3IRBHDGF" target="_blank" rel="noopener">
+      <div class="tc-icon">🔗</div>
+      <div class="tc-text">
+        <div class="tc-label">TinkerCAD-Klasse beitreten</div>
+        <div class="tc-url">tinkercad.com/joinclass/K3IRBHDGF</div>
+        <div class="tc-code">Zugangscode: <strong>dein Vorname in Kleinbuchstaben</strong></div>
+      </div>
+      <div class="tc-arrow">↗</div>
+    </a>
+
+    <div class="level-section level-basis">
+      <div class="level-head">
+        <div class="level-icon">📋</div>
+        <div class="level-head-text">
+          <div class="level-name">So geht's</div>
+          <div class="level-tagline">Alle machen das Tutorial – Schritt für Schritt</div>
+        </div>
+      </div>
+      <div class="level-body">
+        <ol class="schritte-list">${schritteHTML}</ol>
+        ${bildHTML}
+      </div>
+    </div>
+    ` : `
+    <!-- BASIS -->
+    <div class="level-section level-basis">
+      <div class="level-head">
+        <div class="level-icon">🟦</div>
+        <div class="level-head-text">
+          <div class="level-name">Basis</div>
+          <div class="level-tagline">So gehst du vor – Schritt für Schritt</div>
+        </div>
+      </div>
+      <div class="level-body">
+        <ol class="schritte-list">${schritteHTML}</ol>
+        ${bildHTML}
+        ${tippHTML}
+      </div>
+    </div>
+
+    <!-- VERTIEFUNG -->
+    <div class="level-section level-vertiefung" id="lvl-vert">
+      <div class="level-head" onclick="toggleLevel('lvl-vert')" role="button" aria-expanded="false" tabindex="0">
+        <div class="level-icon">🟧</div>
+        <div class="level-head-text">
+          <div class="level-name">Vertiefung</div>
+          <div class="level-tagline">Du bist früh fertig? Dann weiter!</div>
+        </div>
+        <div class="level-toggle" aria-hidden="true">▼</div>
+      </div>
+      <div class="level-body">
+        <p class="level-desc">${s.vertiefung.intro}</p>
+        <p class="level-aufgabe">→ ${s.vertiefung.aufgabe}</p>
+      </div>
+    </div>
+
+    <!-- HERAUSFORDERUNG -->
+    <div class="level-section level-heraus" id="lvl-heraus">
+      <div class="level-head" onclick="toggleLevel('lvl-heraus')" role="button" aria-expanded="false" tabindex="0">
+        <div class="level-icon">🟩</div>
+        <div class="level-head-text">
+          <div class="level-name">Herausforderung</div>
+          <div class="level-tagline">Für Tüftlerinnen und Tüftler</div>
+        </div>
+        <div class="level-toggle" aria-hidden="true">▼</div>
+      </div>
+      <div class="level-body">
+        <p class="level-desc">${s.herausforderung.intro}</p>
+        <p class="level-aufgabe">→ ${s.herausforderung.aufgabe}</p>
+      </div>
+    </div>
+    `}
+
+    <!-- CHECKLISTE -->
+    <div class="checkliste-section">
+      <div class="checkliste-title">✅ Das habe ich erledigt</div>
+      ${checkHTML}
+    </div>
+
+    <!-- NOTIZ -->
+    <div class="notiz-section">
+      <div class="notiz-label">📝 Meine Notiz für die Mappe</div>
+      <textarea class="notiz-textarea"
+        id="notiz-${s.id}"
+        placeholder="${s.notizPrompt}"
+        oninput="saveNote(${s.id})"
+        aria-label="Notiz für Mappe">${noteVal}</textarea>
+    </div>
+
+    <!-- AKTIONEN -->
+    <div class="station-actions">
+      <button class="btn-abschliessen ${isDone ? 'done-state' : ''}"
+        id="btn-abschl"
+        onclick="abschliessen(${s.id})"
+        ${isDone ? 'disabled aria-pressed="true"' : ''}>
+        ${isDone ? '✅ Abgeschlossen' : '✓ Station abschließen'}
+      </button>
+      ${weiterHTML}
+    </div>
+  `;
+}
+
+/* ═══════════════════════════════════════════════════════
+   INTERAKTION
+═══════════════════════════════════════════════════════ */
+function toggleLevel(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.toggle('open');
+  const head = el.querySelector('.level-head');
+  head.setAttribute('aria-expanded', el.classList.contains('open') ? 'true' : 'false');
+}
+
+function toggleCheck(key, stationId) {
+  const cb   = document.getElementById('ci-' + key);
+  const wrap = document.getElementById('ci-wrap-' + key);
+  state.checks[key] = cb.checked;
+  if (cb.checked) wrap.classList.add('checked');
+  else wrap.classList.remove('checked');
+  save();
+}
+
+function saveNote(id) {
+  const ta = document.getElementById('notiz-' + id);
+  if (ta) { state.notes[id] = ta.value; save(); }
+}
+
+function abschliessen(id) {
+  state.done[id] = true;
+  save();
+  renderSidebar();
+
+  // Update button + banner without full re-render
+  const btn   = document.getElementById('btn-abschl');
+  const banner = document.getElementById('done-banner');
+  const weiter = document.getElementById('btn-weiter');
+  if (btn)    { btn.textContent = '✅ Abgeschlossen'; btn.classList.add('done-state'); btn.disabled = true; }
+  if (banner) banner.classList.add('visible');
+  if (weiter) weiter.removeAttribute('hidden');
+
+  // Check if all done
+  if (Object.keys(state.done).length === 7) {
+    setTimeout(() => {
+      state.current = -1;
+      save();
+      renderSidebar();
+      renderMain();
+    }, 1400);
+  }
+}
+
+function goToStation(id) {
+  state.current = id;
+  save();
+  renderSidebar();
+  renderMain();
+}
+
+function editName() {
+  const newName = prompt('Dein Name:', state.name);
+  if (newName !== null) {
+    state.name = newName.trim();
+    save();
+    document.getElementById('header-name').textContent = state.name || 'Name eingeben …';
+  }
+}
+
+function confirmReset() {
+  if (confirm('Willst du wirklich alles zurücksetzen? Alle Notizen und dein Fortschritt werden gelöscht.')) {
+    localStorage.removeItem('reisespiel_name');
+    localStorage.removeItem('reisespiel_current');
+    localStorage.removeItem('reisespiel_done');
+    localStorage.removeItem('reisespiel_checks');
+    localStorage.removeItem('reisespiel_notes');
+    state = { name: '', current: -1, done: {}, checks: {}, notes: {} };
+    renderSidebar();
+    renderMain();
+  }
+}
+
+/* Keyboard support for collapsible level headers */
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    const el = e.target;
+    if (el.closest('.level-vertiefung .level-head') || el.closest('.level-heraus .level-head')) {
+      e.preventDefault();
+      const section = el.closest('.level-section');
+      if (section) toggleLevel(section.id);
+    }
+  }
+});
+
+function printResults() {
+  let stationsHTML = '';
+
+  STATIONS.forEach(s => {
+    const noteVal  = state.notes[s.id] || '–';
+    const doneText = state.done[s.id] ? '✅ Abgeschlossen' : '⬜ Noch offen';
+    const doneColor = state.done[s.id] ? '#4D8B3F' : '#9E4E22';
+    const checks   = s.checkliste.map((text, i) => {
+      const checked = !!state.checks[`${s.id}_${i}`];
+      return `<div style="margin-bottom:5px; display:flex; gap:8px; align-items:flex-start;">
+        <span style="flex-shrink:0;">${checked ? '☑' : '☐'}</span>
+        <span style="${checked ? 'text-decoration:line-through; color:#888;' : ''}">${text}</span>
+      </div>`;
+    }).join('');
+
+    stationsHTML += `
+      <div style="margin-bottom:24pt; page-break-inside:avoid; border:1px solid #D4D0C8; border-radius:8px; overflow:hidden;">
+        <div style="background:#3E5668; color:white; padding:10px 16px; display:flex; justify-content:space-between; align-items:center; gap:12px;">
+          <span style="font-weight:700; font-size:11pt;">${s.icon} Station ${s.id}: ${s.title}</span>
+          <span style="font-size:8pt; opacity:0.85; white-space:nowrap;">${s.phase} · ${s.ds}</span>
+        </div>
+        <div style="padding:12px 16px; background:#F8F8F7;">
+          <div style="display:inline-block; font-size:8pt; font-weight:700; padding:2px 10px; border-radius:12px; margin-bottom:10px; background:${state.done[s.id] ? '#DDF0D8' : '#F5DDD1'}; color:${doneColor};">
+            ${doneText}
+          </div>
+          <div style="font-size:8pt; text-transform:uppercase; letter-spacing:.05em; color:#5A6A78; margin-bottom:6px; font-weight:700;">Checkliste</div>
+          <div style="font-size:9pt; margin-bottom:12pt;">${checks}</div>
+          <div style="font-size:8pt; text-transform:uppercase; letter-spacing:.05em; color:#5A6A78; margin-bottom:6px; font-weight:700;">Meine Notiz</div>
+          <div style="font-size:9pt; background:white; border:1px solid #D4D0C8; border-radius:6px; padding:8px 12px; min-height:32pt; white-space:pre-wrap;">${noteVal}</div>
+        </div>
+      </div>`;
+  });
+
+  const doneCount = Object.keys(state.done).length;
+  const progressPct = Math.round((doneCount / 7) * 100);
+
+  const fullHTML = `<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Ergebnismappe – ${state.name || 'Schüler:in'}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif;
+      color: #1E2A35;
+      padding: 20mm 18mm;
+      font-size: 10pt;
+      line-height: 1.5;
+    }
+    @media print {
+      body { padding: 12mm 14mm; }
+      @page { margin: 10mm; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Deckblatt-Kopf -->
+  <div style="border-bottom:3px solid #3E5668; padding-bottom:14pt; margin-bottom:20pt;">
+    <div style="font-size:8pt; text-transform:uppercase; letter-spacing:.07em; color:#5A6A78; margin-bottom:4pt;">
+      WP Technik · Klasse 8 · HBG Dortmund
+    </div>
+    <h1 style="font-size:18pt; font-weight:800; color:#2C3D4C; margin-bottom:6pt;">
+      🖨️ Mein Reisespiel – Ergebnismappe
+    </h1>
+    <div style="display:flex; gap:24pt; align-items:center; flex-wrap:wrap;">
+      <div style="font-size:11pt;">Name: <strong>${state.name || '____________________'}</strong></div>
+      <div style="font-size:9pt; background:#EEF3F7; padding:4pt 12pt; border-radius:20pt; color:#3E5668; font-weight:600;">
+        Fortschritt: ${doneCount} / 7 Stationen abgeschlossen (${progressPct}%)
+      </div>
+    </div>
+  </div>
+
+  <!-- Alle Stationen -->
+  ${stationsHTML}
+
+  <!-- Fußzeile -->
+  <div style="margin-top:20pt; padding-top:10pt; border-top:1px solid #D4D0C8; font-size:8pt; color:#5A6A78; display:flex; justify-content:space-between;">
+    <span>Erstellt mit der Reisespiel-Begleit-App · HBG Dortmund</span>
+    <span>Gedruckt am ${new Date().toLocaleDateString('de-DE', { day:'2-digit', month:'2-digit', year:'numeric' })}</span>
+  </div>
+</body>
+</html>`;
+
+  const win = window.open('', '_blank');
+  win.document.write(fullHTML);
+  win.document.close();
+  win.onload = () => { win.focus(); win.print(); };
+}
+
+
+renderSidebar();
+renderMain();
+</script>
+</body>
+</html>
