@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Vier gewinnt</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          keyframes: {
+            drop: {
+              '0%': { transform: 'translateY(-520px) scale(.92)', opacity: '.65' },
+              '78%': { transform: 'translateY(8px) scale(1.02)', opacity: '1' },
+              '100%': { transform: 'translateY(0) scale(1)', opacity: '1' }
+            },
+            pop: {
+              '0%,100%': { transform: 'scale(1)' },
+              '50%': { transform: 'scale(1.13)' }
+            },
+            glow: {
+              '0%,100%': { boxShadow: '0 0 0 0 rgba(255,255,255,.65)' },
+              '50%': { boxShadow: '0 0 28px 8px rgba(255,255,255,.55)' }
+            },
+            wiggle: {
+              '0%,100%': { transform: 'rotate(0deg)' },
+              '25%': { transform: 'rotate(-2deg)' },
+              '75%': { transform: 'rotate(2deg)' }
+            }
+          },
+          animation: {
+            drop: 'drop .42s cubic-bezier(.2,.85,.25,1.15)',
+            pop: 'pop .35s ease-in-out',
+            glow: 'glow 1s ease-in-out infinite',
+            wiggle: 'wiggle .25s ease-in-out'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    :root {
+      --safe-top: env(safe-area-inset-top);
+      --safe-bottom: env(safe-area-inset-bottom);
+      --safe-left: env(safe-area-inset-left);
+      --safe-right: env(safe-area-inset-right);
+    }
+    html, body { height: 100%; overscroll-behavior: none; }
+    body { touch-action: manipulation; -webkit-user-select: none; user-select: none; }
+    .ipad-safe { padding: calc(12px + var(--safe-top)) calc(12px + var(--safe-right)) calc(12px + var(--safe-bottom)) calc(12px + var(--safe-left)); }
+    .board-grid { grid-template-columns: repeat(7, minmax(0, 1fr)); grid-template-rows: repeat(6, minmax(0, 1fr)); }
+    .disc-shadow { box-shadow: inset -8px -10px 18px rgba(0,0,0,.25), inset 8px 8px 14px rgba(255,255,255,.32), 0 8px 16px rgba(0,0,0,.22); }
+    .hole-shadow { box-shadow: inset 0 12px 22px rgba(0,0,0,.4), 0 2px 0 rgba(255,255,255,.20); }
+    .glass { backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+  </style>
+</head>
+<body class="min-h-screen overflow-hidden bg-gradient-to-br from-slate-950 via-blue-950 to-slate-900 text-white">
+  <main class="ipad-safe flex min-h-screen flex-col items-center justify-between gap-3">
+    <section class="w-full max-w-6xl rounded-[2rem] border border-white/10 bg-white/10 p-4 shadow-2xl glass md:p-5">
+      <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h1 class="text-3xl font-black tracking-tight md:text-5xl">Vier gewinnt</h1>
+          <p class="mt-1 text-sm text-blue-100/80 md:text-base">Tippe auf eine Spalte. Wer zuerst vier Steine verbindet, gewinnt.</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <button id="newGameBtn" class="rounded-2xl bg-white px-4 py-3 text-base font-bold text-blue-950 shadow-lg transition active:scale-95 md:px-5">Neues Spiel</button>
+          <button id="undoBtn" class="rounded-2xl bg-white/15 px-4 py-3 text-base font-bold text-white ring-1 ring-white/20 transition active:scale-95 disabled:opacity-40 md:px-5">Zug zurück</button>
+          <button id="fullscreenBtn" class="rounded-2xl bg-blue-500 px-4 py-3 text-base font-bold text-white shadow-lg transition active:scale-95 md:px-5">Vollbild</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid w-full max-w-6xl flex-1 grid-cols-1 items-center gap-4 lg:grid-cols-[1fr_330px]">
+      <div class="mx-auto w-full max-w-4xl">
+        <div id="turnBanner" class="mb-3 flex items-center justify-between rounded-3xl bg-white/10 p-3 ring-1 ring-white/10 glass">
+          <div class="flex items-center gap-3">
+            <div id="turnDisc" class="h-10 w-10 rounded-full disc-shadow"></div>
+            <div>
+              <p class="text-xs uppercase tracking-[.22em] text-blue-100/70">Am Zug</p>
+              <p id="statusText" class="text-xl font-black md:text-2xl">Rot beginnt</p>
+            </div>
+          </div>
+          <div id="moveCount" class="rounded-2xl bg-black/20 px-3 py-2 text-sm font-bold text-blue-100">0 Züge</div>
+        </div>
+
+        <div class="relative rounded-[2.2rem] bg-blue-700 p-3 shadow-[0_22px_50px_rgba(0,0,0,.45)] ring-4 ring-blue-300/25 md:p-5">
+          <div id="columnControls" class="mb-3 grid grid-cols-7 gap-2"></div>
+          <div id="board" class="board-grid grid aspect-[7/6] gap-2 rounded-[1.6rem] bg-blue-800 p-2 md:gap-3 md:p-4"></div>
+        </div>
+      </div>
+
+      <aside class="rounded-[2rem] border border-white/10 bg-white/10 p-4 shadow-xl glass lg:self-stretch">
+        <div class="grid grid-cols-2 gap-3 lg:grid-cols-1">
+          <div class="rounded-3xl bg-black/20 p-4">
+            <p class="text-xs uppercase tracking-[.2em] text-blue-100/70">Punkte</p>
+            <div class="mt-3 space-y-3">
+              <div class="flex items-center justify-between gap-3">
+                <div class="flex items-center gap-2"><span class="h-7 w-7 rounded-full bg-red-500 disc-shadow"></span><span class="font-bold">Rot</span></div>
+                <span id="redScore" class="text-3xl font-black">0</span>
+              </div>
+              <div class="flex items-center justify-between gap-3">
+                <div class="flex items-center gap-2"><span class="h-7 w-7 rounded-full bg-yellow-300 disc-shadow"></span><span class="font-bold">Gelb</span></div>
+                <span id="yellowScore" class="text-3xl font-black">0</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="rounded-3xl bg-black/20 p-4">
+            <p class="text-xs uppercase tracking-[.2em] text-blue-100/70">Regeln</p>
+            <p class="mt-3 text-sm leading-relaxed text-blue-50/90">Steine fallen immer nach unten. Vier gleiche Farben waagerecht, senkrecht oder diagonal gewinnen.</p>
+          </div>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <div id="winOverlay" class="pointer-events-none fixed inset-0 hidden items-center justify-center bg-black/45 p-6 opacity-0 transition-opacity duration-300">
+    <div class="max-w-md rounded-[2rem] bg-white p-7 text-center text-slate-950 shadow-2xl animate-pop">
+      <div id="winnerDisc" class="mx-auto mb-4 h-20 w-20 rounded-full disc-shadow"></div>
+      <h2 id="winnerTitle" class="text-4xl font-black">Gewonnen!</h2>
+      <p id="winnerText" class="mt-2 text-lg text-slate-600"></p>
+      <button id="overlayNewGameBtn" class="mt-6 rounded-2xl bg-blue-700 px-6 py-3 text-lg font-black text-white shadow-lg active:scale-95">Neue Runde</button>
+    </div>
+  </div>
+
+  <script>
+    const ROWS = 6;
+    const COLS = 7;
+    const EMPTY = 0;
+    const RED = 1;
+    const YELLOW = 2;
+
+    let board = [];
+    let currentPlayer = RED;
+    let gameOver = false;
+    let history = [];
+    let scores = { [RED]: 0, [YELLOW]: 0 };
+    let winningCells = [];
+
+    const boardEl = document.getElementById('board');
+    const controlsEl = document.getElementById('columnControls');
+    const statusText = document.getElementById('statusText');
+    const turnDisc = document.getElementById('turnDisc');
+    const moveCount = document.getElementById('moveCount');
+    const newGameBtn = document.getElementById('newGameBtn');
+    const undoBtn = document.getElementById('undoBtn');
+    const fullscreenBtn = document.getElementById('fullscreenBtn');
+    const redScore = document.getElementById('redScore');
+    const yellowScore = document.getElementById('yellowScore');
+    const winOverlay = document.getElementById('winOverlay');
+    const winnerDisc = document.getElementById('winnerDisc');
+    const winnerTitle = document.getElementById('winnerTitle');
+    const winnerText = document.getElementById('winnerText');
+    const overlayNewGameBtn = document.getElementById('overlayNewGameBtn');
+
+    function playerName(player) {
+      return player === RED ? 'Rot' : 'Gelb';
+    }
+
+    function discClasses(player) {
+      if (player === RED) return 'bg-red-500';
+      if (player === YELLOW) return 'bg-yellow-300';
+      return 'bg-slate-950/35';
+    }
+
+    function resetBoard() {
+      board = Array.from({ length: ROWS }, () => Array(COLS).fill(EMPTY));
+      currentPlayer = RED;
+      gameOver = false;
+      history = [];
+      winningCells = [];
+      hideOverlay();
+      render();
+    }
+
+    function render() {
+      boardEl.innerHTML = '';
+      controlsEl.innerHTML = '';
+
+      for (let c = 0; c < COLS; c++) {
+        const btn = document.createElement('button');
+        btn.className = 'h-11 rounded-2xl bg-white/15 text-xl font-black text-white ring-1 ring-white/20 transition hover:bg-white/25 active:scale-95 disabled:opacity-30 md:h-14';
+        btn.innerHTML = '↓';
+        btn.disabled = gameOver || board[0][c] !== EMPTY;
+        btn.setAttribute('aria-label', `Stein in Spalte ${c + 1} werfen`);
+        btn.addEventListener('click', () => makeMove(c));
+        controlsEl.appendChild(btn);
+      }
+
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          const cell = document.createElement('button');
+          const value = board[r][c];
+          const isWinning = winningCells.some(([wr, wc]) => wr === r && wc === c);
+          cell.className = [
+            'relative aspect-square rounded-full transition-transform active:scale-95',
+            value === EMPTY ? 'bg-slate-950/35 hole-shadow' : `${discClasses(value)} disc-shadow`,
+            isWinning ? 'animate-glow ring-4 ring-white/80' : '',
+          ].join(' ');
+          cell.setAttribute('aria-label', `Feld Reihe ${r + 1}, Spalte ${c + 1}`);
+          cell.addEventListener('click', () => makeMove(c));
+          if (history.length && history[history.length - 1].row === r && history[history.length - 1].col === c) {
+            cell.classList.add('animate-drop');
+          }
+          boardEl.appendChild(cell);
+        }
+      }
+
+      turnDisc.className = `h-10 w-10 rounded-full disc-shadow ${discClasses(currentPlayer)} ${gameOver ? '' : 'animate-pop'}`;
+      statusText.textContent = gameOver ? statusText.textContent : `${playerName(currentPlayer)} ist am Zug`;
+      moveCount.textContent = `${history.length} ${history.length === 1 ? 'Zug' : 'Züge'}`;
+      undoBtn.disabled = history.length === 0 || gameOver;
+      redScore.textContent = scores[RED];
+      yellowScore.textContent = scores[YELLOW];
+    }
+
+    function makeMove(col) {
+      if (gameOver || board[0][col] !== EMPTY) return;
+
+      let row = -1;
+      for (let r = ROWS - 1; r >= 0; r--) {
+        if (board[r][col] === EMPTY) {
+          row = r;
+          break;
+        }
+      }
+      if (row === -1) return;
+
+      board[row][col] = currentPlayer;
+      history.push({ row, col, player: currentPlayer });
+
+      const win = checkWin(row, col, currentPlayer);
+      if (win.hasWon) {
+        gameOver = true;
+        winningCells = win.cells;
+        scores[currentPlayer] += 1;
+        statusText.textContent = `${playerName(currentPlayer)} gewinnt!`;
+        render();
+        showOverlay(currentPlayer);
+        return;
+      }
+
+      if (history.length === ROWS * COLS) {
+        gameOver = true;
+        statusText.textContent = 'Unentschieden!';
+        render();
+        showOverlay(null);
+        return;
+      }
+
+      currentPlayer = currentPlayer === RED ? YELLOW : RED;
+      render();
+    }
+
+    function checkWin(row, col, player) {
+      const directions = [
+        [[0, 1], [0, -1]],
+        [[1, 0], [-1, 0]],
+        [[1, 1], [-1, -1]],
+        [[1, -1], [-1, 1]],
+      ];
+
+      for (const dirPair of directions) {
+        let cells = [[row, col]];
+        for (const [dr, dc] of dirPair) {
+          let r = row + dr;
+          let c = col + dc;
+          while (r >= 0 && r < ROWS && c >= 0 && c < COLS && board[r][c] === player) {
+            cells.push([r, c]);
+            r += dr;
+            c += dc;
+          }
+        }
+        if (cells.length >= 4) return { hasWon: true, cells: cells.slice(0, 4) };
+      }
+      return { hasWon: false, cells: [] };
+    }
+
+    function undoMove() {
+      if (!history.length || gameOver) return;
+      const last = history.pop();
+      board[last.row][last.col] = EMPTY;
+      currentPlayer = last.player;
+      winningCells = [];
+      render();
+    }
+
+    function showOverlay(player) {
+      if (player) {
+        winnerDisc.className = `mx-auto mb-4 h-20 w-20 rounded-full disc-shadow ${discClasses(player)} animate-glow`;
+        winnerTitle.textContent = `${playerName(player)} gewinnt!`;
+        winnerText.textContent = 'Vier in einer Reihe. Sehr sauber versenkt.';
+      } else {
+        winnerDisc.className = 'mx-auto mb-4 h-20 w-20 rounded-full disc-shadow bg-gradient-to-br from-red-500 to-yellow-300';
+        winnerTitle.textContent = 'Unentschieden!';
+        winnerText.textContent = 'Das Raster ist voll. Neue Runde, neues Glück.';
+      }
+      winOverlay.classList.remove('hidden', 'pointer-events-none');
+      winOverlay.classList.add('flex');
+      setTimeout(() => winOverlay.classList.remove('opacity-0'), 20);
+    }
+
+    function hideOverlay() {
+      winOverlay.classList.add('opacity-0', 'pointer-events-none');
+      setTimeout(() => {
+        winOverlay.classList.add('hidden');
+        winOverlay.classList.remove('flex');
+      }, 250);
+    }
+
+    async function toggleFullscreen() {
+      try {
+        if (!document.fullscreenElement) {
+          await document.documentElement.requestFullscreen();
+          fullscreenBtn.textContent = 'Vollbild beenden';
+        } else {
+          await document.exitFullscreen();
+          fullscreenBtn.textContent = 'Vollbild';
+        }
+      } catch (error) {
+        fullscreenBtn.classList.add('animate-wiggle');
+        setTimeout(() => fullscreenBtn.classList.remove('animate-wiggle'), 350);
+        alert('Vollbild ist auf diesem Gerät oder Browser gerade nicht verfügbar. Tipp: Auf dem iPad funktioniert es oft am besten, wenn die Datei als Web-App zum Home-Bildschirm hinzugefügt wird.');
+      }
+    }
+
+    document.addEventListener('fullscreenchange', () => {
+      fullscreenBtn.textContent = document.fullscreenElement ? 'Vollbild beenden' : 'Vollbild';
+    });
+
+    newGameBtn.addEventListener('click', resetBoard);
+    overlayNewGameBtn.addEventListener('click', resetBoard);
+    undoBtn.addEventListener('click', undoMove);
+    fullscreenBtn.addEventListener('click', toggleFullscreen);
+
+    resetBoard();
+  </script>
+</body>
+</html>
