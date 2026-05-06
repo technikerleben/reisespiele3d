@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Mühle – iPad Spiel</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --wood-1: #8b5a2b;
+      --wood-2: #b98245;
+      --wood-3: #6d421e;
+      --line: #2b1608;
+    }
+    html, body { height: 100%; overscroll-behavior: none; }
+    body { margin: 0; touch-action: manipulation; }
+    .wood-bg {
+      background:
+        radial-gradient(circle at 20% 18%, rgba(255,255,255,.18), transparent 10%),
+        radial-gradient(circle at 73% 62%, rgba(255,255,255,.10), transparent 12%),
+        repeating-linear-gradient(92deg, rgba(255,255,255,.05) 0 18px, rgba(0,0,0,.04) 18px 36px),
+        linear-gradient(135deg, var(--wood-2), var(--wood-1) 48%, var(--wood-3));
+    }
+    .board-shadow { box-shadow: inset 0 0 0 10px rgba(74,39,13,.35), inset 0 0 28px rgba(0,0,0,.28), 0 22px 45px rgba(0,0,0,.32); }
+    .point { transform: translate(-50%, -50%); }
+    .stone {
+      transform: translate(-50%, -50%);
+      box-shadow: inset -7px -9px 12px rgba(0,0,0,.28), inset 6px 7px 12px rgba(255,255,255,.18), 0 6px 12px rgba(0,0,0,.35);
+    }
+    .stone.white { background: radial-gradient(circle at 35% 28%, #fff, #e7e1d3 45%, #c7bca8); border: 2px solid #847662; }
+    .stone.black { background: radial-gradient(circle at 35% 28%, #555, #171717 55%, #030303); border: 2px solid #000; }
+    .select-ring { animation: pulseRing 1s ease-in-out infinite; }
+    @keyframes pulseRing { 0%,100% { box-shadow: 0 0 0 5px rgba(250,204,21,.7), 0 0 22px rgba(250,204,21,.75);} 50% { box-shadow: 0 0 0 8px rgba(250,204,21,.35), 0 0 35px rgba(250,204,21,.45);} }
+    .tap-target { -webkit-tap-highlight-color: transparent; }
+  </style>
+</head>
+<body class="min-h-screen bg-stone-950 text-stone-100 select-none overflow-hidden">
+  <main class="h-[100dvh] w-screen flex flex-col items-center justify-between p-3 sm:p-4 gap-2">
+    <header class="w-full max-w-5xl flex items-center justify-between gap-2 shrink-0">
+      <div>
+        <h1 class="text-2xl sm:text-4xl font-black tracking-tight">Mühle</h1>
+        <p id="status" class="text-sm sm:text-lg text-stone-300">Weiß beginnt. Setze einen Stein.</p>
+      </div>
+      <div class="flex gap-2">
+        <button id="fullscreenBtn" class="px-3 py-2 rounded-xl bg-stone-700 hover:bg-stone-600 active:scale-95 transition text-sm font-bold">Vollbild</button>
+        <button id="resetBtn" class="px-3 py-2 rounded-xl bg-amber-700 hover:bg-amber-600 active:scale-95 transition text-sm font-bold">Neu</button>
+      </div>
+    </header>
+
+    <section class="w-full max-w-5xl flex items-center justify-center gap-3 min-h-0 flex-1">
+      <aside class="hidden md:flex flex-col gap-3 w-40 shrink-0">
+        <div class="rounded-2xl bg-stone-800/80 p-3 border border-stone-700">
+          <div class="font-bold text-lg flex items-center gap-2"><span class="inline-block w-5 h-5 rounded-full stone white static !transform-none"></span> Weiß</div>
+          <div class="text-stone-300 text-sm mt-1">Vorrat: <span id="whiteStock">9</span></div>
+          <div class="text-stone-300 text-sm">Gefangen: <span id="whiteCaptured">0</span></div>
+        </div>
+        <div class="rounded-2xl bg-stone-800/80 p-3 border border-stone-700">
+          <div class="font-bold text-lg flex items-center gap-2"><span class="inline-block w-5 h-5 rounded-full stone black static !transform-none"></span> Schwarz</div>
+          <div class="text-stone-300 text-sm mt-1">Vorrat: <span id="blackStock">9</span></div>
+          <div class="text-stone-300 text-sm">Gefangen: <span id="blackCaptured">0</span></div>
+        </div>
+      </aside>
+
+      <div id="board" class="relative wood-bg board-shadow rounded-[2rem] aspect-square h-full max-h-[calc(100dvh-8.5rem)] max-w-[min(94vw,calc(100dvh-8.5rem))] border-[10px] border-[#4a270d] overflow-hidden tap-target">
+        <svg class="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 100" aria-hidden="true">
+          <defs>
+            <filter id="rough"><feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="0.3"/></filter>
+          </defs>
+          <g stroke="var(--line)" stroke-width="1.35" fill="none" stroke-linecap="round" filter="url(#rough)">
+            <rect x="10" y="10" width="80" height="80" rx="1" />
+            <rect x="24" y="24" width="52" height="52" rx="1" />
+            <rect x="38" y="38" width="24" height="24" rx="1" />
+            <line x1="50" y1="10" x2="50" y2="38" />
+            <line x1="50" y1="62" x2="50" y2="90" />
+            <line x1="10" y1="50" x2="38" y2="50" />
+            <line x1="62" y1="50" x2="90" y2="50" />
+          </g>
+        </svg>
+      </div>
+    </section>
+
+    <footer class="w-full max-w-5xl grid grid-cols-2 md:hidden gap-2 shrink-0">
+      <div class="rounded-2xl bg-stone-800/90 p-2 border border-stone-700 text-sm">
+        <b>Weiß</b> · Vorrat <span id="whiteStockMobile">9</span> · Gefangen <span id="whiteCapturedMobile">0</span>
+      </div>
+      <div class="rounded-2xl bg-stone-800/90 p-2 border border-stone-700 text-sm">
+        <b>Schwarz</b> · Vorrat <span id="blackStockMobile">9</span> · Gefangen <span id="blackCapturedMobile">0</span>
+      </div>
+    </footer>
+  </main>
+
+<script>
+(() => {
+  const points = [
+    [10,10],[50,10],[90,10],[24,24],[50,24],[76,24],[38,38],[50,38],[62,38],
+    [10,50],[24,50],[38,50],[62,50],[76,50],[90,50],
+    [38,62],[50,62],[62,62],[24,76],[50,76],[76,76],[10,90],[50,90],[90,90]
+  ];
+  const neighbors = [
+    [1,9],[0,2,4],[1,14],[4,10],[1,3,5,7],[4,13],[7,11],[4,6,8],[7,12],
+    [0,10,21],[3,9,11,18],[6,10,15],[8,13,17],[5,12,14,20],[2,13,23],
+    [11,16],[15,17,19],[12,16],[10,19],[16,18,20,22],[13,19],[9,22],[19,21,23],[14,22]
+  ];
+  const mills = [
+    [0,1,2],[3,4,5],[6,7,8],[9,10,11],[12,13,14],[15,16,17],[18,19,20],[21,22,23],
+    [0,9,21],[3,10,18],[6,11,15],[1,4,7],[16,19,22],[8,12,17],[5,13,20],[2,14,23]
+  ];
+
+  const boardEl = document.getElementById('board');
+  const statusEl = document.getElementById('status');
+  const ui = {
+    whiteStock: document.getElementById('whiteStock'), blackStock: document.getElementById('blackStock'),
+    whiteCaptured: document.getElementById('whiteCaptured'), blackCaptured: document.getElementById('blackCaptured'),
+    whiteStockMobile: document.getElementById('whiteStockMobile'), blackStockMobile: document.getElementById('blackStockMobile'),
+    whiteCapturedMobile: document.getElementById('whiteCapturedMobile'), blackCapturedMobile: document.getElementById('blackCapturedMobile')
+  };
+
+  let state;
+  const other = p => p === 'white' ? 'black' : 'white';
+  const label = p => p === 'white' ? 'Weiß' : 'Schwarz';
+
+  function reset() {
+    state = {
+      cells: Array(24).fill(null),
+      current: 'white',
+      stock: { white: 9, black: 9 },
+      captured: { white: 0, black: 0 },
+      selected: null,
+      removeMode: false,
+      phase: 'placing',
+      winner: null
+    };
+    render();
+  }
+
+  function countStones(player) { return state.cells.filter(x => x === player).length; }
+  function playerMills(player) { return mills.filter(m => m.every(i => state.cells[i] === player)); }
+  function inMill(index) { const p = state.cells[index]; return p && mills.some(m => m.includes(index) && m.every(i => state.cells[i] === p)); }
+  function createsMill(index, player) { return mills.some(m => m.includes(index) && m.every(i => state.cells[i] === player)); }
+  function allPlaced() { return state.stock.white === 0 && state.stock.black === 0; }
+  function canMove(player) {
+    if (state.stock[player] > 0) return true;
+    const stones = countStones(player);
+    if (stones <= 3) return state.cells.some(c => c === null);
+    return state.cells.some((c,i) => c === player && neighbors[i].some(n => state.cells[n] === null));
+  }
+  function checkWinner() {
+    const opponent = other(state.current);
+    if (allPlaced() && countStones(opponent) < 3) state.winner = state.current;
+    else if (allPlaced() && !canMove(opponent)) state.winner = state.current;
+  }
+
+  function clickPoint(i) {
+    if (state.winner) return;
+    if (state.removeMode) return tryRemove(i);
+
+    const player = state.current;
+    if (state.phase === 'placing') {
+      if (state.cells[i]) return;
+      state.cells[i] = player;
+      state.stock[player]--;
+      animateStone(i);
+      if (createsMill(i, player)) {
+        state.removeMode = true;
+      } else {
+        state.current = other(player);
+      }
+      if (allPlaced()) state.phase = 'moving';
+      render();
+      return;
+    }
+
+    if (state.selected === null) {
+      if (state.cells[i] === player) state.selected = i;
+      render();
+      return;
+    }
+
+    if (state.cells[i] === player) {
+      state.selected = i;
+      render();
+      return;
+    }
+
+    if (state.cells[i] === null) {
+      const flying = countStones(player) <= 3;
+      const legal = flying || neighbors[state.selected].includes(i);
+      if (!legal) return;
+      state.cells[state.selected] = null;
+      state.cells[i] = player;
+      state.selected = null;
+      animateStone(i);
+      if (createsMill(i, player)) state.removeMode = true;
+      else state.current = other(player);
+      checkWinner();
+      render();
+    }
+  }
+
+  function tryRemove(i) {
+    const victim = other(state.current);
+    if (state.cells[i] !== victim) return;
+    const victimIndices = state.cells.map((c,idx) => c === victim ? idx : -1).filter(idx => idx !== -1);
+    const removable = victimIndices.filter(idx => !inMill(idx));
+    if (removable.length && inMill(i)) return;
+    state.cells[i] = null;
+    state.captured[state.current]++;
+    state.removeMode = false;
+    checkWinner();
+    if (!state.winner) state.current = victim;
+    render();
+  }
+
+  function render() {
+    boardEl.querySelectorAll('.point,.stone,.hint').forEach(el => el.remove());
+    points.forEach(([x,y], i) => {
+      const point = document.createElement('button');
+      point.className = 'point absolute w-[9.5%] h-[9.5%] rounded-full bg-[#2b1608]/80 border-2 border-amber-900/70 tap-target transition active:scale-90 z-10';
+      point.style.left = x + '%'; point.style.top = y + '%';
+      point.setAttribute('aria-label', 'Feld ' + (i+1));
+      point.addEventListener('click', () => clickPoint(i));
+      boardEl.appendChild(point);
+
+      if (state.cells[i]) {
+        const s = document.createElement('button');
+        s.className = `stone ${state.cells[i]} absolute w-[10.8%] h-[10.8%] rounded-full z-20 tap-target transition duration-200 active:scale-95`;
+        if (state.selected === i) s.classList.add('select-ring');
+        s.style.left = x + '%'; s.style.top = y + '%';
+        s.addEventListener('click', e => { e.stopPropagation(); clickPoint(i); });
+        boardEl.appendChild(s);
+      }
+    });
+
+    const possible = moveHints();
+    possible.forEach(i => {
+      const [x,y] = points[i];
+      const h = document.createElement('div');
+      h.className = 'hint absolute w-[6.5%] h-[6.5%] rounded-full bg-yellow-300/60 z-15 pointer-events-none animate-ping';
+      h.style.left = x + '%'; h.style.top = y + '%'; h.style.transform = 'translate(-50%, -50%)';
+      boardEl.appendChild(h);
+    });
+
+    ui.whiteStock.textContent = ui.whiteStockMobile.textContent = state.stock.white;
+    ui.blackStock.textContent = ui.blackStockMobile.textContent = state.stock.black;
+    ui.whiteCaptured.textContent = ui.whiteCapturedMobile.textContent = state.captured.white;
+    ui.blackCaptured.textContent = ui.blackCapturedMobile.textContent = state.captured.black;
+
+    if (state.winner) statusEl.textContent = `${label(state.winner)} gewinnt!`;
+    else if (state.removeMode) statusEl.textContent = `${label(state.current)} hat eine Mühle! Entferne einen gegnerischen Stein.`;
+    else if (state.phase === 'placing') statusEl.textContent = `${label(state.current)} ist dran: Setze einen Stein.`;
+    else if (state.selected !== null) statusEl.textContent = `${label(state.current)}: Wähle ein freies Nachbarfeld${countStones(state.current) <= 3 ? ' oder springe frei.' : '.'}`;
+    else statusEl.textContent = `${label(state.current)} ist dran: Wähle einen Stein zum Ziehen.`;
+  }
+
+  function moveHints() {
+    if (state.phase !== 'moving' || state.removeMode || state.selected === null) return [];
+    if (countStones(state.current) <= 3) return state.cells.map((c,i) => c === null ? i : -1).filter(i => i !== -1);
+    return neighbors[state.selected].filter(i => state.cells[i] === null);
+  }
+
+  function animateStone(i) {
+    setTimeout(() => {
+      const stones = [...boardEl.querySelectorAll('.stone')];
+      const [x,y] = points[i];
+      const stone = stones.find(el => el.style.left === x + '%' && el.style.top === y + '%');
+      if (stone) {
+        stone.classList.add('animate-bounce');
+        setTimeout(() => stone.classList.remove('animate-bounce'), 650);
+      }
+    }, 30);
+  }
+
+  document.getElementById('resetBtn').addEventListener('click', reset);
+  document.getElementById('fullscreenBtn').addEventListener('click', async () => {
+    try {
+      if (!document.fullscreenElement) await document.documentElement.requestFullscreen();
+      else await document.exitFullscreen();
+    } catch (e) { alert('Vollbild ist auf diesem Gerät/Browser gerade nicht verfügbar.'); }
+  });
+
+  reset();
+})();
+</script>
+</body>
+</html>
