@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Studientag Technik · Vier-gewinnt-Schablone</title>
+  <style>
+    :root {
+      --bg: #F5F4F1;
+      --paper: #FFFFFF;
+      --text: #1E2A35;
+      --muted: #5A6A78;
+      --blue-dark: #2C3D4C;
+      --blue: #3E5668;
+      --blue-mid: #6A8599;
+      --blue-pale: #D0DCE6;
+      --blue-ghost: #EEF3F7;
+      --orange: #D97A4A;
+      --orange-pale: #F5DDD1;
+      --green: #7DBB6F;
+      --green-pale: #DDF0D8;
+      --line: rgba(44, 61, 76, 0.16);
+      --shadow: 0 18px 45px rgba(44, 61, 76, 0.08);
+      --radius: 22px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Inter, "Source Sans 3", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(208, 220, 230, 0.75), transparent 34rem),
+        linear-gradient(180deg, #F8F7F4 0%, var(--bg) 100%);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    .page {
+      width: min(1080px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 40px 0 56px;
+    }
+
+    header {
+      display: grid;
+      grid-template-columns: 1.25fr 0.75fr;
+      gap: 28px;
+      align-items: stretch;
+      margin-bottom: 28px;
+    }
+
+    .hero,
+    .image-card,
+    .card {
+      background: rgba(255, 255, 255, 0.78);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .hero {
+      padding: 36px;
+    }
+
+    .label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 18px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: var(--blue-ghost);
+      color: var(--blue-dark);
+      font-size: 0.84rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    h1,
+    h2,
+    h3 {
+      margin: 0;
+      color: var(--blue-dark);
+      line-height: 1.08;
+      font-family: Georgia, "Times New Roman", serif;
+      font-weight: 500;
+    }
+
+    h1 {
+      max-width: 760px;
+      font-size: clamp(2.4rem, 5vw, 4.8rem);
+      letter-spacing: -0.04em;
+    }
+
+    .lead {
+      max-width: 680px;
+      margin: 20px 0 0;
+      color: var(--muted);
+      font-size: 1.12rem;
+    }
+
+    .meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 28px;
+    }
+
+    .meta {
+      padding: 9px 12px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fff;
+      color: var(--blue);
+      font-size: 0.92rem;
+      font-weight: 650;
+    }
+
+    .image-card {
+      min-height: 360px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      background: linear-gradient(145deg, rgba(238, 243, 247, 0.92), rgba(255, 255, 255, 0.9));
+    }
+
+    .example-image {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      object-fit: cover;
+      background: var(--blue-ghost);
+    }
+
+    .image-placeholder {
+      flex: 1;
+      min-height: 260px;
+      border: 1.5px dashed rgba(62, 86, 104, 0.38);
+      border-radius: 18px;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      text-align: center;
+      color: var(--blue);
+      background:
+        linear-gradient(90deg, rgba(255,255,255,0.55) 1px, transparent 1px),
+        linear-gradient(rgba(255,255,255,0.55) 1px, transparent 1px),
+        rgba(245, 244, 241, 0.56);
+      background-size: 28px 28px;
+    }
+
+    .image-placeholder strong {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--blue-dark);
+      font-size: 1.05rem;
+    }
+
+    .image-note {
+      margin: 14px 4px 0;
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    main {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 22px;
+    }
+
+    .card {
+      padding: 28px;
+    }
+
+    .card.wide {
+      grid-column: 1 / -1;
+    }
+
+    h2 {
+      margin-bottom: 16px;
+      font-size: clamp(1.55rem, 2.6vw, 2.25rem);
+      letter-spacing: -0.02em;
+    }
+
+    h3 {
+      margin-top: 20px;
+      margin-bottom: 8px;
+      font-family: Inter, "Source Sans 3", system-ui, sans-serif;
+      font-size: 1rem;
+      font-weight: 750;
+    }
+
+    p {
+      margin: 0 0 12px;
+    }
+
+    ul,
+    ol {
+      margin: 0;
+      padding-left: 1.2rem;
+    }
+
+    li {
+      margin: 0.35rem 0;
+      padding-left: 0.15rem;
+    }
+
+    .task-box {
+      margin-top: 18px;
+      padding: 18px 20px;
+      border-left: 5px solid var(--orange);
+      border-radius: 16px;
+      background: var(--orange-pale);
+    }
+
+    .task-box p:last-child {
+      margin-bottom: 0;
+    }
+
+    .checklist {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .check {
+      padding: 14px 15px;
+      border-radius: 16px;
+      background: var(--blue-ghost);
+      color: var(--blue-dark);
+      font-weight: 650;
+    }
+
+    .steps {
+      counter-reset: step;
+      list-style: none;
+      padding: 0;
+      display: grid;
+      gap: 12px;
+    }
+
+    .steps li {
+      counter-increment: step;
+      display: grid;
+      grid-template-columns: 36px 1fr;
+      gap: 12px;
+      align-items: start;
+      margin: 0;
+      padding: 0;
+    }
+
+    .steps li::before {
+      content: counter(step);
+      width: 36px;
+      height: 36px;
+      display: grid;
+      place-items: center;
+      border-radius: 12px;
+      background: var(--blue);
+      color: white;
+      font-weight: 800;
+    }
+
+    .hint {
+      margin-top: 18px;
+      padding: 16px 18px;
+      border-radius: 16px;
+      background: var(--green-pale);
+      color: #2F5F28;
+    }
+
+    .small {
+      color: var(--muted);
+      font-size: 0.94rem;
+    }
+
+    .footer-card {
+      margin-top: 22px;
+      padding: 20px 24px;
+      border-radius: var(--radius);
+      border: 1px solid var(--line);
+      background: rgba(238, 243, 247, 0.72);
+      color: var(--blue-dark);
+    }
+
+    @media (max-width: 860px) {
+      header,
+      main {
+        grid-template-columns: 1fr;
+      }
+
+      .hero {
+        padding: 28px;
+      }
+
+      .checklist {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media print {
+      body {
+        background: white;
+      }
+
+      .page {
+        width: 100%;
+        padding: 0;
+      }
+
+      .hero,
+      .image-card,
+      .card,
+      .footer-card {
+        box-shadow: none;
+        break-inside: avoid;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <section class="hero" aria-labelledby="title">
+        <div class="label">Studientag · Technik · Klasse 8</div>
+        <h1 id="title">Vier-gewinnt-Schablone als Schlüsselanhänger</h1>
+        <p class="lead">Du gestaltest in TinkerCAD eine kleine Schablone. Mit ihr kann man ein Vier-gewinnt-Spielfeld schnell auf Papier zeichnen.</p>
+        <div class="meta-row" aria-label="Rahmendaten">
+          <span class="meta">3D-Modellierung</span>
+          <span class="meta">TinkerCAD</span>
+          <span class="meta">74 × 105 mm</span>
+          <span class="meta">3 mm stark</span>
+          <span class="meta">7 × 6 Raster</span>
+        </div>
+      </section>
+
+      <aside class="image-card" aria-label="Bildplatzhalter">
+        <img class="example-image" src="beispiel.png" alt="KI-generiertes Beispiel einer blauen Vier-gewinnt-Schablone auf Papier" />
+        <p class="image-note">Hinweis: Das Beispielbild ist KI-generiert. Es zeigt nur eine mögliche Idee. Dein eigenes Modell darf anders aussehen.</p>
+      </aside>
+    </header>
+
+    <main>
+      <section class="card wide" aria-labelledby="auftrag">
+        <h2 id="auftrag">Dein Auftrag</h2>
+        <p>Erstelle in TinkerCAD eine Schablone für Vier gewinnt.</p>
+        <p>Die Schablone soll 42 Öffnungen haben.</p>
+        <p>Lege sie später auf Papier. Zeichne damit schnell das Spielfeld.</p>
+        <div class="task-box">
+          <p><strong>Ziel:</strong> Dein Modell ist stabil, handlich und als Schlüsselanhänger nutzbar.</p>
+        </div>
+      </section>
+
+      <section class="card" aria-labelledby="vorgaben">
+        <h2 id="vorgaben">Vorgaben</h2>
+        <ul>
+          <li>Format: 74 × 105 mm.</li>
+          <li>Materialstärke: 3 mm.</li>
+          <li>Raster: 7 Spalten und 6 Reihen.</li>
+          <li>Insgesamt: 42 Öffnungen.</li>
+          <li>Alle 42 Öffnungen sind gleich groß.</li>
+          <li>Durchmesser der 42 Öffnungen: 10 mm.</li>
+          <li>Loch für den Schlüsselring: 6 mm Durchmesser.</li>
+          <li>Die Ecken sind leicht abgerundet.</li>
+        </ul>
+      </section>
+
+      <section class="card" aria-labelledby="achte">
+        <h2 id="achte">Achte darauf</h2>
+        <div class="checklist">
+          <div class="check">Gleiche Abstände</div>
+          <div class="check">Stabile Stege</div>
+          <div class="check">Saubere Ausrichtung</div>
+          <div class="check">Handliche Größe</div>
+          <div class="check">Gut nutzbare Öffnungen</div>
+          <div class="check">Klare Form</div>
+        </div>
+      </section>
+
+      <section class="card wide" aria-labelledby="schritte">
+        <h2 id="schritte">Arbeitsschritte</h2>
+        <ol class="steps">
+          <li><span>Öffne TinkerCAD und erstelle ein neues Design.</span></li>
+          <li><span>Baue eine flache Grundplatte. Nutze 74 × 105 mm und 3 mm Höhe.</span></li>
+          <li><span>Erstelle eine Öffnung für ein Spielfeld. Nutze 10 mm Durchmesser.</span></li>
+          <li><span>Kopiere die Öffnung zu einem Raster mit 7 Spalten und 6 Reihen.</span></li>
+          <li><span>Gruppiere die Formen. So entstehen die 42 Öffnungen.</span></li>
+          <li><span>Füge ein Loch für den Schlüsselring hinzu. Nutze 6 mm Durchmesser.</span></li>
+          <li><span>Runde die Ecken leicht ab.</span></li>
+          <li><span>Prüfe dein Modell von oben und von der Seite.</span></li>
+        </ol>
+        <div class="hint">
+          <strong>Tipp:</strong> Die Stege zwischen den Öffnungen dürfen nicht zu dünn sein. Sonst kann die Schablone leicht brechen.
+        </div>
+      </section>
+
+      <section class="card" aria-labelledby="abgabe">
+        <h2 id="abgabe">Abgabe</h2>
+        <ul>
+          <li>Speichere dein TinkerCAD-Modell.</li>
+          <li>Mache einen Screenshot von oben.</li>
+          <li>Mache einen Screenshot schräg von der Seite.</li>
+          <li>Schreibe 3 kurze Sätze zu deinem Modell.</li>
+        </ul>
+      </section>
+
+      <section class="card" aria-labelledby="satzstarter">
+        <h2 id="satzstarter">Satzstarter</h2>
+        <p class="small">Nutze diese Sätze für deine kurze Erklärung.</p>
+        <ul>
+          <li>Meine Schablone funktioniert, weil ...</li>
+          <li>Ich habe auf Stabilität geachtet, indem ...</li>
+          <li>Beim nächsten Mal würde ich ...</li>
+        </ul>
+      </section>
+    </main>
+
+    <footer class="footer-card">
+      <strong>Fertig bist du, wenn:</strong> Das Raster stimmt, die Schablone stabil wirkt und man sie als Schlüsselanhänger verwenden kann.
+    </footer>
+  </div>
+</body>
+</html>
