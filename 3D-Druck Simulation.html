@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>3D-Druck Simulation – WP Technik Kl. 8</title>
+<style>
+:root {
+  --col-slate-dark:#2C3D4C; --col-slate:#3E5668; --col-slate-mid:#6A8599;
+  --col-slate-pale:#D0DCE6; --col-slate-ghost:#EEF3F7;
+  --col-rust-dark:#9E4E22; --col-rust:#D97A4A;
+  --col-rust-mid:#EBA882; --col-rust-pale:#F5DDD1;
+  --col-sage-dark:#4D8B3F; --col-sage:#7DBB6F; --col-sage-pale:#DDF0D8;
+  --col-warning:#C17B00; --col-warning-pale:#FFF3CC; --col-warning-text:#5C4400;
+  --col-error:#C0392B; --col-error-pale:#FDECEA; --col-error-text:#7A1B14;
+  --col-bg:#F5F4F1; --col-white:#FFFFFF;
+  --col-text:#1E2A35; --col-text-muted:#5A6A78;
+  --col-border:#D4D0C8; --col-disabled-bg:#EBEBEA; --col-disabled-text:#7A7672;
+  --col-shadow:rgba(62,86,104,.10);
+  --text-xs:.694rem; --text-sm:.833rem; --text-base:1rem;
+  --text-md:1.2rem; --text-lg:1.44rem; --text-xl:1.728rem;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,'Helvetica Neue',Arial,sans-serif;background:var(--col-bg);
+  color:var(--col-text);font-size:var(--text-base);line-height:1.6;
+  min-height:100vh;display:flex;flex-direction:column}
+:focus-visible{outline:3px solid var(--col-slate);outline-offset:3px;border-radius:4px}
+
+header{background:var(--col-slate);color:white;padding:11px 22px;
+  display:flex;align-items:center;gap:12px}
+header h1{font-size:var(--text-lg);font-weight:700;flex:1}
+.badge{background:var(--col-rust-dark);color:white;font-size:var(--text-xs);
+  font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:.05em;white-space:nowrap}
+
+.container{max-width:960px;margin:0 auto;padding:0 16px;flex:1}
+
+.tab-nav{background:var(--col-white);border-bottom:2px solid var(--col-border);
+  display:flex;position:sticky;top:0;z-index:10;box-shadow:0 2px 8px var(--col-shadow)}
+.tab-btn{flex:1;padding:11px 6px;border:none;background:none;font-size:var(--text-sm);
+  font-weight:600;color:var(--col-text-muted);cursor:pointer;
+  border-bottom:3px solid transparent;transition:all .2s;min-height:48px;font-family:inherit}
+.tab-btn:hover{background:var(--col-slate-ghost);color:var(--col-slate)}
+.tab-btn.active{color:var(--col-slate);border-bottom-color:var(--col-rust)}
+.tab-content{display:none;padding:16px 0 28px}
+.tab-content.active{display:block}
+
+/* === SIMULATION === */
+.sim-layout{display:grid;grid-template-columns:1fr 272px;gap:16px;align-items:start}
+.canvas-wrap{background:var(--col-white);border-radius:10px;
+  padding:8px;box-shadow:0 2px 12px var(--col-shadow)}
+canvas{width:100%;height:auto;display:block;border-radius:6px}
+.legend{display:flex;gap:10px;flex-wrap:wrap;padding:8px 2px 0}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:var(--text-xs);color:var(--col-text-muted)}
+.leg-dot{width:14px;height:8px;border-radius:2px;flex-shrink:0}
+.ctrl-panel{background:var(--col-white);border-radius:10px;padding:16px;
+  box-shadow:0 2px 8px var(--col-shadow);display:flex;flex-direction:column;gap:12px}
+.ctrl-panel h2{font-size:var(--text-base);font-weight:700;color:var(--col-slate-dark);
+  border-bottom:1px solid var(--col-border);padding-bottom:8px}
+.model-info{background:var(--col-slate-ghost);border-radius:6px;padding:6px 10px;
+  font-size:var(--text-xs);font-weight:600;color:var(--col-slate)}
+.data-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.data-item{background:var(--col-slate-ghost);border-radius:8px;padding:8px 10px}
+.data-label{font-size:var(--text-xs);color:var(--col-text-muted);font-weight:600;
+  text-transform:uppercase;letter-spacing:.04em;line-height:1.3}
+.data-value{font-size:var(--text-md);font-weight:700;color:var(--col-slate-dark);
+  font-variant-numeric:tabular-nums}
+.data-value.hot{color:var(--col-rust-dark)}
+.prog-outer{background:var(--col-border);border-radius:4px;height:8px;overflow:hidden}
+.prog-inner{background:var(--col-sage);height:100%;width:0%;transition:width .35s;border-radius:4px}
+.btn-primary{background:var(--col-rust-dark);color:white;border:none;border-radius:8px;
+  padding:10px;font-size:var(--text-base);font-weight:700;cursor:pointer;min-height:44px;
+  width:100%;transition:background .2s;font-family:inherit}
+.btn-primary:hover:not(:disabled){background:#7A3D1A}
+.btn-primary:disabled{background:var(--col-disabled-bg);color:var(--col-disabled-text);cursor:not-allowed}
+.btn-row{display:flex;gap:8px}
+.btn-secondary{background:var(--col-slate-ghost);color:var(--col-slate-dark);
+  border:1.5px solid var(--col-border);border-radius:8px;padding:8px 10px;
+  font-size:var(--text-sm);font-weight:600;cursor:pointer;min-height:40px;flex:1;
+  transition:background .2s;font-family:inherit}
+.btn-secondary:hover:not(:disabled){background:var(--col-slate-pale)}
+.btn-secondary:disabled{opacity:.45;cursor:not-allowed}
+.speed-ctrl label{font-size:var(--text-xs);font-weight:600;color:var(--col-text-muted);
+  text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:4px}
+input[type=range]{width:100%;accent-color:var(--col-rust);cursor:pointer;height:22px}
+.speed-labels{display:flex;justify-content:space-between;
+  font-size:var(--text-xs);color:var(--col-text-muted);margin-top:2px}
+.status-box{background:var(--col-slate-pale);border-left:3px solid var(--col-slate-mid);
+  border-radius:0 6px 6px 0;padding:10px 12px;font-size:var(--text-sm);
+  color:var(--col-slate-dark);line-height:1.5;min-height:54px}
+.status-box.success{background:var(--col-sage-pale);border-left-color:var(--col-sage-dark);color:#2D5C25}
+.status-box.warning{background:var(--col-warning-pale);border-left-color:var(--col-warning);color:var(--col-warning-text)}
+
+/* === ALLGEMEINE KARTEN === */
+.section-intro{margin-bottom:14px}
+.section-intro h2{font-size:var(--text-lg);font-weight:700;color:var(--col-slate-dark);margin-bottom:3px}
+.section-intro p{font-size:var(--text-sm);color:var(--col-text-muted)}
+.card{background:var(--col-white);border-radius:8px;padding:16px;
+  box-shadow:0 2px 8px var(--col-shadow)}
+
+/* === BAUTEILE === */
+.bauteile-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.bauteil-card{background:var(--col-white);border-radius:8px;padding:16px;
+  box-shadow:0 2px 8px var(--col-shadow);border-top:3px solid var(--col-rust)}
+.bauteil-card.blue{border-top-color:var(--col-slate)}
+.bauteil-card.green{border-top-color:var(--col-sage)}
+.bauteil-icon{font-size:1.9rem;margin-bottom:6px;display:block}
+.bauteil-name{font-size:var(--text-base);font-weight:700;color:var(--col-slate-dark);margin-bottom:5px}
+.temp-badge{display:inline-block;font-size:var(--text-xs);font-weight:700;
+  padding:2px 8px;border-radius:10px;margin-bottom:6px}
+.temp-badge.hot{background:var(--col-rust-pale);color:var(--col-rust-dark)}
+.temp-badge.warm{background:var(--col-warning-pale);color:var(--col-warning-text)}
+.bauteil-text{font-size:var(--text-sm);color:var(--col-text-muted);line-height:1.5}
+
+/* === PROZESS === */
+.steps{display:flex;flex-direction:column;gap:12px}
+.step{display:flex;align-items:flex-start;gap:14px;background:var(--col-white);
+  border-radius:8px;padding:14px 16px;box-shadow:0 1px 6px var(--col-shadow)}
+.step-nr{background:var(--col-slate);color:white;width:32px;height:32px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:var(--text-base);flex-shrink:0}
+.step-body h3{font-size:var(--text-base);font-weight:700;color:var(--col-slate-dark);margin-bottom:2px}
+.step-body p{font-size:var(--text-sm);color:var(--col-text-muted);line-height:1.5}
+.info-warn{background:var(--col-warning-pale);border-left:3px solid var(--col-warning);
+  border-radius:0 8px 8px 0;padding:12px 16px;margin-top:16px;
+  font-size:var(--text-sm);color:var(--col-warning-text);line-height:1.5}
+
+/* === SLICER TAB === */
+.flow-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  background:var(--col-white);border-radius:8px;padding:14px 18px;
+  box-shadow:0 2px 8px var(--col-shadow);margin-bottom:16px}
+.flow-box{background:var(--col-slate-pale);border-radius:6px;padding:8px 14px;
+  font-size:var(--text-sm);font-weight:700;color:var(--col-slate-dark);white-space:nowrap}
+.flow-box.highlight{background:var(--col-rust-pale);color:var(--col-rust-dark);border:1.5px solid var(--col-rust)}
+.flow-arrow{color:var(--col-slate-mid);font-size:1.2rem;font-weight:700}
+.flow-desc{flex:1;font-size:var(--text-sm);color:var(--col-text-muted);
+  padding-left:8px;border-left:2px solid var(--col-border);margin-left:4px;min-width:160px}
+
+.slicer-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.slicer-card{background:var(--col-white);border-radius:8px;padding:16px;
+  box-shadow:0 2px 8px var(--col-shadow)}
+.slicer-card h3{font-size:var(--text-base);font-weight:700;color:var(--col-slate-dark);margin-bottom:4px}
+.slicer-card .sc-desc{font-size:var(--text-sm);color:var(--col-text-muted);margin-bottom:12px;line-height:1.4}
+
+/* Pill buttons for layer height */
+.pill-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.pill{border:1.5px solid var(--col-border);border-radius:20px;padding:5px 14px;
+  font-size:var(--text-sm);font-weight:600;cursor:pointer;background:var(--col-slate-ghost);
+  color:var(--col-slate-dark);transition:all .15s;font-family:inherit}
+.pill:hover{background:var(--col-slate-pale)}
+.pill.active{background:var(--col-rust-dark);color:white;border-color:var(--col-rust-dark)}
+
+/* Layer preview (CSS stripes) */
+.layer-preview{border-radius:6px;overflow:hidden;height:72px;margin-bottom:10px;
+  border:1.5px solid var(--col-border)}
+.lp-stripe{background:var(--col-slate)}
+.lp-gap{background:#E8ECF0}
+.effect-tag{display:inline-flex;align-items:center;gap:5px;font-size:var(--text-xs);
+  font-weight:600;padding:3px 10px;border-radius:12px}
+.effect-tag.good{background:var(--col-sage-pale);color:#2D5C25}
+.effect-tag.warn{background:var(--col-warning-pale);color:var(--col-warning-text)}
+.effect-tag.info{background:var(--col-slate-pale);color:var(--col-slate-dark)}
+.effect-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+
+/* Infill slider + canvas */
+.infill-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.infill-row span{font-size:var(--text-md);font-weight:700;color:var(--col-rust-dark);
+  min-width:44px;text-align:right;font-variant-numeric:tabular-nums}
+#infill-canvas{display:block;border-radius:6px;border:1.5px solid var(--col-border);
+  width:100%;height:auto}
+
+/* Stützen + G-Code full-width cards */
+.slicer-card-full{background:var(--col-white);border-radius:8px;padding:16px;
+  box-shadow:0 2px 8px var(--col-shadow);margin-bottom:14px}
+.slicer-card-full h3{font-size:var(--text-base);font-weight:700;color:var(--col-slate-dark);margin-bottom:6px}
+
+.toggle-row{display:flex;gap:10px;margin-bottom:10px}
+.toggle-btn{flex:1;padding:9px;border-radius:8px;border:1.5px solid var(--col-border);
+  font-size:var(--text-sm);font-weight:700;cursor:pointer;transition:all .15s;font-family:inherit;
+  background:var(--col-slate-ghost);color:var(--col-slate-dark)}
+.toggle-btn.active-off{background:var(--col-slate-pale);border-color:var(--col-slate);color:var(--col-slate-dark)}
+.toggle-btn.active-on{background:var(--col-rust-dark);border-color:var(--col-rust-dark);color:white}
+
+.supp-visual{display:flex;gap:14px;margin-top:10px}
+.supp-box{flex:1;background:var(--col-slate-ghost);border-radius:8px;padding:12px;text-align:center}
+.supp-box canvas{display:block;margin:0 auto 6px}
+.supp-box p{font-size:var(--text-xs);color:var(--col-text-muted);line-height:1.4}
+
+/* G-Code */
+pre.gcode{background:#1E2A35;color:#D0DCE6;border-radius:8px;padding:14px 16px;
+  font-family:'Courier New',monospace;font-size:var(--text-sm);line-height:1.8;overflow-x:auto}
+.gc-cmd{color:#EBA882;font-weight:bold}
+.gc-comment{color:#6A8599;font-style:italic}
+
+/* Programm-Karten */
+.prog-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.prog-card{background:var(--col-slate-ghost);border-radius:8px;padding:14px;
+  border-left:3px solid var(--col-rust)}
+.prog-card h4{font-size:var(--text-base);font-weight:700;color:var(--col-slate-dark);margin-bottom:4px}
+.prog-card p{font-size:var(--text-sm);color:var(--col-text-muted);line-height:1.4}
+.prog-tag{display:inline-block;background:var(--col-sage-pale);color:#2D5C25;
+  font-size:var(--text-xs);font-weight:700;padding:2px 8px;border-radius:10px;margin-bottom:6px}
+
+/* === QUIZ === */
+.quiz-card{background:var(--col-white);border-radius:8px;padding:20px;
+  box-shadow:0 2px 8px var(--col-shadow);margin-bottom:14px}
+.frage-nr{color:var(--col-rust-dark);font-size:var(--text-sm);font-weight:700;display:block;margin-bottom:4px}
+.frage-text{font-size:var(--text-base);font-weight:700;color:var(--col-slate-dark);margin-bottom:14px}
+.antwort-btn{display:block;width:100%;text-align:left;background:var(--col-slate-ghost);
+  border:1.5px solid var(--col-border);border-radius:8px;padding:10px 14px;
+  font-size:var(--text-base);cursor:pointer;margin-bottom:8px;transition:all .2s;
+  min-height:44px;color:var(--col-text);font-family:inherit}
+.antwort-btn:hover:not(:disabled){background:var(--col-slate-pale);border-color:var(--col-slate-mid)}
+.antwort-btn:disabled{cursor:not-allowed}
+.antwort-btn.richtig{background:var(--col-sage-pale)!important;border-color:var(--col-sage-dark)!important;color:#2D5C25!important}
+.antwort-btn.falsch{background:var(--col-error-pale)!important;border-color:var(--col-error)!important;color:var(--col-error-text)!important}
+.feedback-box{padding:10px 14px;border-radius:6px;font-size:var(--text-sm);margin-top:4px;font-weight:600;display:none}
+.feedback-richtig{background:var(--col-sage-pale);color:#2D5C25;display:block}
+.feedback-falsch{background:var(--col-error-pale);color:var(--col-error-text);display:block}
+.quiz-result{background:var(--col-white);border-radius:10px;padding:24px;text-align:center;
+  box-shadow:0 2px 12px var(--col-shadow);margin-top:8px;display:none}
+.quiz-score{font-size:var(--text-xl);font-weight:700;color:var(--col-slate-dark);margin-bottom:6px}
+.quiz-fb-text{font-size:var(--text-sm);color:var(--col-text-muted);margin-bottom:14px}
+.btn-quiz-retry{background:var(--col-rust-dark);color:white;border:none;border-radius:8px;
+  padding:10px 24px;font-size:var(--text-base);font-weight:700;cursor:pointer;
+  min-height:44px;font-family:inherit}
+
+footer{background:var(--col-slate-dark);color:var(--col-slate-pale);
+  text-align:center;padding:10px;font-size:var(--text-xs);margin-top:auto}
+
+@media(max-width:720px){
+  .sim-layout{grid-template-columns:1fr}
+  .bauteile-grid{grid-template-columns:1fr 1fr}
+  .slicer-grid{grid-template-columns:1fr}
+  .prog-grid{grid-template-columns:1fr}
+}
+@media(max-width:480px){
+  .bauteile-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🖨️ Wie funktioniert ein 3D-Drucker?</h1>
+  <span class="badge">WP Technik · Jg. 8</span>
+</header>
+
+<div class="container">
+
+<nav class="tab-nav" role="tablist" aria-label="Bereiche">
+  <button class="tab-btn active" data-tab="simulation" role="tab" aria-selected="true">🖨️ Simulation</button>
+  <button class="tab-btn" data-tab="bauteile"    role="tab" aria-selected="false">🔩 Bauteile</button>
+  <button class="tab-btn" data-tab="prozess"     role="tab" aria-selected="false">📋 Ablauf</button>
+  <button class="tab-btn" data-tab="slicer"      role="tab" aria-selected="false">🔪 Slicer</button>
+  <button class="tab-btn" data-tab="quiz"        role="tab" aria-selected="false">❓ Quiz</button>
+</nav>
+
+<!-- ===== TAB 1: SIMULATION ===== -->
+<div id="tab-simulation" class="tab-content active" role="tabpanel">
+  <div class="sim-layout">
+    <div>
+      <div class="canvas-wrap">
+        <canvas id="printer-canvas" width="540" height="415"></canvas>
+      </div>
+      <div class="legend">
+        <div class="legend-item"><div class="leg-dot" style="background:#3E5668"></div><span>erkaltete Schicht</span></div>
+        <div class="legend-item"><div class="leg-dot" style="background:#D97A4A"></div><span>heißes Filament</span></div>
+        <div class="legend-item"><div class="leg-dot" style="background:#9E4E22"></div><span>Düse (Hotend)</span></div>
+        <div class="legend-item"><div class="leg-dot" style="background:#2C3D4C"></div><span>Druckkopf</span></div>
+        <div class="legend-item"><div class="leg-dot" style="background:#C8BFB5"></div><span>Druckbett</span></div>
+      </div>
+    </div>
+    <div class="ctrl-panel">
+      <h2>🎛️ Steuerung</h2>
+      <div class="model-info">🏠 Modell: Hausform &middot; 42 Schichten</div>
+      <div class="data-grid">
+        <div class="data-item">
+          <div class="data-label">Schicht</div>
+          <div class="data-value" id="d-layer">– / 42</div>
+        </div>
+        <div class="data-item">
+          <div class="data-label">Fortschritt</div>
+          <div class="data-value" id="d-progress">0 %</div>
+        </div>
+        <div class="data-item">
+          <div class="data-label">🌡️ Düse</div>
+          <div class="data-value" id="d-nozzle">20 °C</div>
+        </div>
+        <div class="data-item">
+          <div class="data-label">🌡️ Bett</div>
+          <div class="data-value" id="d-bed">20 °C</div>
+        </div>
+      </div>
+      <div class="prog-outer"><div class="prog-inner" id="prog-bar"></div></div>
+      <button id="btn-start" class="btn-primary">▶ Starten</button>
+      <div class="btn-row">
+        <button id="btn-pause" class="btn-secondary" disabled>⏸ Pause</button>
+        <button id="btn-reset" class="btn-secondary">↺ Neu</button>
+      </div>
+      <div class="speed-ctrl">
+        <label for="speed-slider">⚡ Druckgeschwindigkeit</label>
+        <input type="range" id="speed-slider" min="1" max="5" value="3">
+        <div class="speed-labels"><span>langsam</span><span>schnell</span></div>
+      </div>
+      <div class="status-box" id="status-box" role="status" aria-live="polite">
+        Drücke „Starten", um die Simulation zu beginnen!
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TAB 2: BAUTEILE ===== -->
+<div id="tab-bauteile" class="tab-content" role="tabpanel">
+  <div class="section-intro">
+    <h2>Die wichtigsten Bauteile</h2>
+    <p>So ist ein FDM-3D-Drucker aufgebaut – alle Teile arbeiten zusammen.</p>
+  </div>
+  <div class="bauteile-grid">
+    <div class="bauteil-card">
+      <span class="bauteil-icon">🧵</span>
+      <div class="bauteil-name">Filament</div>
+      <div class="bauteil-text">Der Kunststofffaden – das „Druckmaterial". Aufgerollt auf einer Spule. Häufigstes Material: <strong>PLA</strong> (biologisch abbaubar) oder ABS.</div>
+    </div>
+    <div class="bauteil-card blue">
+      <span class="bauteil-icon">⚙️</span>
+      <div class="bauteil-name">Extruder</div>
+      <div class="bauteil-text">Ein kleiner Motor, der das Filament von der Spule zieht und in das heiße Hotend drückt. Er bestimmt, wie viel Kunststoff ausgedrückt wird.</div>
+    </div>
+    <div class="bauteil-card">
+      <span class="bauteil-icon">🔥</span>
+      <div class="bauteil-name">Hotend (Düse)</div>
+      <span class="temp-badge hot">⚠️ ca. 200 °C</span>
+      <div class="bauteil-text">Schmilzt das Filament auf ~200 °C auf. Durch die winzige Düsenöffnung (0,4 mm Ø) wird der flüssige Kunststoff aufgetragen.</div>
+    </div>
+    <div class="bauteil-card green">
+      <span class="bauteil-icon">📋</span>
+      <div class="bauteil-name">Druckbett</div>
+      <span class="temp-badge warm">ca. 60 °C</span>
+      <div class="bauteil-text">Die beheizte Plattform, auf der das Objekt entsteht. Die Wärme hilft der ersten Schicht zu haften, damit sie sich nicht ablöst.</div>
+    </div>
+    <div class="bauteil-card blue">
+      <span class="bauteil-icon">🔩</span>
+      <div class="bauteil-name">Schrittmotoren</div>
+      <div class="bauteil-text">Hochpräzise Motoren bewegen den Druckkopf in X-, Y- und Z-Richtung. Genauigkeit bis zu 0,05 mm – viel genauer als von Hand!</div>
+    </div>
+    <div class="bauteil-card">
+      <span class="bauteil-icon">💨</span>
+      <div class="bauteil-name">Lüfter (Kühler)</div>
+      <div class="bauteil-text">Kühlt das frisch aufgetragene Filament sofort ab, damit es fest wird. Erst dann kann die nächste Schicht darauf gedruckt werden.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TAB 3: ABLAUF ===== -->
+<div id="tab-prozess" class="tab-content" role="tabpanel">
+  <div class="section-intro">
+    <h2>Vom Modell zum fertigen Objekt</h2>
+    <p>5 Schritte – von der Idee bis zum fertigen 3D-Druck.</p>
+  </div>
+  <div class="steps">
+    <div class="step">
+      <div class="step-nr">1</div>
+      <div class="step-body">
+        <h3>📐 3D-Modell erstellen (CAD)</h3>
+        <p>Mit einer CAD-Software (z.B. <strong>TinkerCAD</strong>) entwirft man das Objekt am Computer als 3D-Modell und speichert es als <strong>.stl-Datei</strong>.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-nr">2</div>
+      <div class="step-body">
+        <h3>🔪 Slicen – Schichten erzeugen</h3>
+        <p>Ein <strong>Slicer-Programm</strong> (z.B. Cura) zerschneidet das 3D-Modell digital in viele dünne, waagerechte Schichten und stellt alle Druckeinstellungen ein. → Mehr dazu im Tab „Slicer"!</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-nr">3</div>
+      <div class="step-body">
+        <h3>💾 G-Code übertragen</h3>
+        <p>Der Slicer erzeugt eine <strong>G-Code-Datei</strong> mit tausenden Befehlen für den Drucker. Diese Datei kommt per SD-Karte oder USB-Kabel an den Drucker.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-nr">4</div>
+      <div class="step-body">
+        <h3>🖨️ Schicht für Schicht drucken</h3>
+        <p>Das Filament schmilzt und wird Schicht für Schicht aufgetragen. Dieses Verfahren heißt <strong>FDM – Fused Deposition Modeling</strong>.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-nr">5</div>
+      <div class="step-body">
+        <h3>🎉 Abnehmen &amp; Nachbearbeiten</h3>
+        <p>Das fertige Objekt wird vorsichtig vom Druckbett gelöst. Stützmaterialien werden entfernt, die Oberfläche evtl. geschliffen.</p>
+      </div>
+    </div>
+  </div>
+  <div class="info-warn">⚠️ <strong>Sicherheitshinweis:</strong> Echte 3D-Drucker werden sehr heiß (Düse ~200 °C, Bett ~60 °C). Nur unter Aufsicht bedienen! Druckkopf und Bett niemals anfassen, solange sie warm sind.</div>
+</div>
+
+<!-- ===== TAB 4: SLICER ===== -->
+<div id="tab-slicer" class="tab-content" role="tabpanel">
+  <div class="section-intro">
+    <h2>Der Slicer – das Herzstück der Vorbereitung</h2>
+    <p>Bevor ein 3D-Drucker losdruckt, übernimmt der Slicer die wichtige Übersetzungsarbeit.</p>
+  </div>
+
+  <!-- Workflow -->
+  <div class="flow-row">
+    <div class="flow-box">📐 .stl-Datei<br><small style="font-weight:400;color:var(--col-text-muted)">3D-Modell</small></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box highlight">🔪 Slicer<br><small style="font-weight:400">z.B. Cura</small></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box">💾 G-Code<br><small style="font-weight:400;color:var(--col-text-muted)">Druckbefehle</small></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box">🖨️ Drucker<br><small style="font-weight:400;color:var(--col-text-muted)">druckt los</small></div>
+    <div class="flow-desc">Der Slicer <strong>zerschneidet</strong> das 3D-Modell in Schichten, berechnet alle Bewegungen des Druckkopfs und erzeugt daraus den <strong>G-Code</strong> – eine Textdatei mit tausenden Befehlen.</div>
+  </div>
+
+  <!-- Settings cards: Layer Height + Infill -->
+  <div class="slicer-grid">
+
+    <!-- Schichthöhe -->
+    <div class="slicer-card">
+      <h3>📏 Schichthöhe (Layer Height)</h3>
+      <p class="sc-desc">Wie dick ist eine einzelne Schicht? Je dünner, desto glatter – aber desto länger dauert der Druck.</p>
+      <div class="pill-row">
+        <button class="pill active" data-lh="fine"   onclick="setLayerHeight('fine',  this)">0,1 mm – fein</button>
+        <button class="pill"        data-lh="medium" onclick="setLayerHeight('medium',this)">0,2 mm – Standard</button>
+        <button class="pill"        data-lh="coarse" onclick="setLayerHeight('coarse',this)">0,3 mm – grob</button>
+      </div>
+      <div id="layer-preview" class="layer-preview"></div>
+      <div id="layer-effects" class="effect-tags"></div>
+    </div>
+
+    <!-- Fülldichte -->
+    <div class="slicer-card">
+      <h3>🧱 Fülldichte (Infill)</h3>
+      <p class="sc-desc">Wie viel Kunststoff steckt im Inneren des Objekts? Mehr Füllung = stabiler, aber auch schwerer und langsamer.</p>
+      <div class="infill-row">
+        <input type="range" id="infill-slider" min="5" max="100" value="20" step="5"
+          oninput="updateInfill(this.value)" style="flex:1">
+        <span id="infill-val">20 %</span>
+      </div>
+      <canvas id="infill-canvas" width="260" height="120"></canvas>
+      <div id="infill-effects" class="effect-tags" style="margin-top:8px"></div>
+    </div>
+  </div>
+
+  <!-- Stützmaterial -->
+  <div class="slicer-card-full">
+    <h3>🏗️ Stützmaterial (Supports)</h3>
+    <p style="font-size:var(--text-sm);color:var(--col-text-muted);margin-bottom:10px;line-height:1.4">
+      Überhängende Teile können nicht in der Luft gedruckt werden – sie würden durchhängen. Der Slicer kann automatisch <strong>Stützmaterial</strong> generieren, das nach dem Druck entfernt wird.
+    </p>
+    <div class="toggle-row">
+      <button class="toggle-btn active-off" id="supp-off" onclick="setSupports(false)">🚫 Keine Stützen</button>
+      <button class="toggle-btn" id="supp-on" onclick="setSupports(true)">✅ Stützen aktiviert</button>
+    </div>
+    <div class="supp-visual">
+      <div class="supp-box">
+        <canvas id="supp-canvas-off" width="180" height="110"></canvas>
+        <p><strong>Ohne Stützen:</strong> Überhänge bis ca. 45° sind ok. Steilere Winkel können misslingen.</p>
+      </div>
+      <div class="supp-box">
+        <canvas id="supp-canvas-on" width="180" height="110"></canvas>
+        <p><strong>Mit Stützen:</strong> Jeder Überhang gelingt – Stützmaterial hinterher vorsichtig entfernen.</p>
+      </div>
+    </div>
+    <div id="supp-effect" class="effect-tags" style="margin-top:10px"></div>
+  </div>
+
+  <!-- G-Code -->
+  <div class="slicer-card-full">
+    <h3>💾 Was ist G-Code?</h3>
+    <p style="font-size:var(--text-sm);color:var(--col-text-muted);margin-bottom:12px;line-height:1.4">
+      Der Slicer wandelt das 3D-Modell in eine <strong>G-Code-Datei</strong> um – eine einfache Textdatei mit tausenden Zeilen. Jede Zeile ist ein Befehl für den Drucker: Wohin soll der Kopf fahren? Wie heiß soll die Düse sein? Wie viel Filament kommt raus?
+    </p>
+    <pre class="gcode"><span class="gc-cmd">G28</span>              <span class="gc-comment">; Druckkopf auf Startposition fahren (Homing)</span>
+<span class="gc-cmd">M109 S200</span>        <span class="gc-comment">; Warte, bis Düse 200 °C erreicht hat</span>
+<span class="gc-cmd">M190 S60</span>         <span class="gc-comment">; Warte, bis Druckbett 60 °C erreicht hat</span>
+<span class="gc-cmd">G1 X50 Y30 F3000</span> <span class="gc-comment">; Druckkopf zu Position X=50, Y=30 bewegen</span>
+<span class="gc-cmd">G1 Z0.2</span>          <span class="gc-comment">; Düse auf Höhe der ersten Schicht absenken</span>
+<span class="gc-cmd">G1 X150 E8.5</span>     <span class="gc-comment">; Kopf nach X=150 fahren, dabei 8,5 mm Filament vorschieben</span>
+<span class="gc-cmd">M104 S0</span>          <span class="gc-comment">; Düse abkühlen lassen (Heizung aus)</span>
+<span class="gc-cmd">M84</span>              <span class="gc-comment">; Motoren ausschalten – Druck fertig!</span></pre>
+    <div style="margin-top:10px;background:var(--col-slate-pale);border-radius:6px;padding:10px 14px;font-size:var(--text-sm);color:var(--col-slate-dark);">
+      💡 <strong>Merke:</strong> G-Code ist für jeden Drucker verständlich – ähnlich wie Noten für Musiker. Der Slicer „komponiert" den G-Code, der Drucker „spielt" ihn ab.
+    </div>
+  </div>
+
+  <!-- Programme -->
+  <div class="slicer-card-full">
+    <h3>🖥️ Beliebte Slicer-Programme</h3>
+    <div class="prog-grid">
+      <div class="prog-card">
+        <span class="prog-tag">Kostenlos</span>
+        <h4>Ultimaker Cura</h4>
+        <p>Der beliebteste Slicer weltweit. Einfach zu bedienen, viele Einstellmöglichkeiten. Ideal für Einsteiger und Schulen. Unterstützt fast alle Drucker.</p>
+      </div>
+      <div class="prog-card">
+        <span class="prog-tag">Kostenlos</span>
+        <h4>PrusaSlicer</h4>
+        <p>Entwickelt von Prusa Research. Sehr präzise, gut für fortgeschrittene Nutzer. Bietet viele automatische Funktionen und gute Stützenberechnung.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TAB 5: QUIZ ===== -->
+<div id="tab-quiz" class="tab-content" role="tabpanel">
+  <div class="section-intro">
+    <h2>Wissenstest 🧠</h2>
+    <p>Teste dein Wissen über 3D-Druck und Slicer!</p>
+  </div>
+  <div id="quiz-container"></div>
+  <div class="quiz-result" id="quiz-result">
+    <div class="quiz-score" id="quiz-score"></div>
+    <div class="quiz-fb-text" id="quiz-fb"></div>
+    <button class="btn-quiz-retry" onclick="resetQuiz()">🔄 Nochmal versuchen</button>
+  </div>
+</div>
+
+</div><!-- /container -->
+<footer>WP Technik · Klasse 8 · HBG Dortmund · 3D-Druck (FDM-Verfahren)</footer>
+
+<script>
+'use strict';
+// =============== TABS ===============
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => {
+      b.classList.remove('active'); b.setAttribute('aria-selected','false');
+    });
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active'); btn.setAttribute('aria-selected','true');
+    document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
+  });
+});
+
+// =============== SIMULATION ===============
+const canvas = document.getElementById('printer-canvas');
+const ctx = canvas.getContext('2d');
+const CW=540, CH=415;
+const FL=52,FR=490,FT=16,FB=390;
+const RL=86,RR=454,BED_Y=362;
+const PCX=(RL+RR)/2; // 270
+const LH=6, NL=42, MHW=82;
+const HW=40,HH=26,NH=10;
+
+const SHAPE=(()=>{
+  const s=[];
+  for(let i=0;i<NL;i++){
+    const p=i/NL;
+    let hw=p<0.62?MHW:MHW*Math.max(0,1-(p-0.62)/0.38);
+    s.push({L:PCX-Math.max(hw,4), R:PCX+Math.max(hw,4)});
+  }
+  return s;
+})();
+
+const SPEEDS=[1,2,4,8,15];
+const getSpd=()=>SPEEDS[+document.getElementById('speed-slider').value-1];
+
+function mkSim(){
+  return{st:'idle',layer:0,hx:SHAPE[0].L,dir:1,nozzle:20,bed:20,animId:null,spd:getSpd()};
+}
+let sim=mkSim();
+
+function rr(x,y,w,h,r){
+  if(ctx.roundRect)ctx.roundRect(x,y,w,h,r); else ctx.rect(x,y,w,h);
+}
+
+function draw(){
+  ctx.clearRect(0,0,CW,CH);
+  ctx.fillStyle='#E8ECF0';
+  ctx.fillRect(FL+2,FT+2,FR-FL-4,FB-FT-4);
+  drawFrame(); drawBed(); drawObject();
+  if(sim.st==='idle') drawIdleHint();
+  else{ drawHead(); if(sim.st==='done') drawDoneBanner(); }
+  // Re-draw frame border on top
+  ctx.strokeStyle='#2C3D4C'; ctx.lineWidth=4;
+  ctx.strokeRect(FL,FT,FR-FL,FB-FT);
+}
+
+function drawFrame(){
+  ctx.strokeStyle='#2C3D4C'; ctx.lineWidth=4;
+  ctx.strokeRect(FL,FT,FR-FL,FB-FT);
+  ctx.fillStyle='#2C3D4C';
+  [[FL-2,FT-2],[FR-10,FT-2],[FL-2,FB-10],[FR-10,FB-10]].forEach(([x,y])=>{
+    ctx.beginPath(); ctx.arc(x+6,y+6,6,0,Math.PI*2); ctx.fill();
+  });
+  ctx.strokeStyle='#5A7080'; ctx.lineWidth=7; ctx.lineCap='round';
+  ctx.beginPath();
+  ctx.moveTo(RL,FT+10); ctx.lineTo(RL,BED_Y);
+  ctx.moveTo(RR,FT+10); ctx.lineTo(RR,BED_Y);
+  ctx.stroke(); ctx.lineCap='butt';
+  ctx.save();
+  ctx.translate(FL-9,220); ctx.rotate(-Math.PI/2);
+  ctx.font='600 10px -apple-system,Arial';
+  ctx.fillStyle='#6A8599'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText('Führungsschiene',0,0);
+  ctx.restore();
+}
+
+function drawBed(){
+  ctx.fillStyle='#8A8480';
+  ctx.fillRect(RL-6,BED_Y+3,RR-RL+12,18);
+  ctx.fillStyle=sim.bed>35?'#C08060':'#C8BFB5';
+  ctx.fillRect(RL-3,BED_Y,RR-RL+6,5);
+  ctx.font='600 11px -apple-system,Arial';
+  ctx.fillStyle=sim.bed>35?'#9E4E22':'#5A6A78';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText('Druckbett  '+Math.round(sim.bed)+' °C',PCX,BED_Y+12);
+}
+
+function drawObject(){
+  for(let i=0;i<sim.layer&&i<NL;i++){
+    const sh=SHAPE[i], y=BED_Y-(i+1)*LH;
+    ctx.fillStyle=i%2===0?'#3E5668':'#4B6A7E';
+    ctx.fillRect(sh.L,y,sh.R-sh.L,LH);
+    ctx.fillStyle='rgba(0,0,0,.10)';
+    ctx.fillRect(sh.L,y+LH-1,sh.R-sh.L,1);
+  }
+  if(sim.st==='printing'&&sim.layer<NL){
+    const sh=SHAPE[sim.layer], y=BED_Y-(sim.layer+1)*LH;
+    const dL=sim.dir===1?sh.L:Math.max(sim.hx,sh.L);
+    const dR=sim.dir===1?Math.min(sim.hx,sh.R):sh.R;
+    if(dR>dL){ctx.fillStyle='#D97A4A'; ctx.fillRect(dL,y,dR-dL,LH);}
+  }
+  if(sim.layer>5){
+    ctx.font='600 10px -apple-system,Arial'; ctx.fillStyle='#6A8599';
+    ctx.textAlign='left'; ctx.textBaseline='top';
+    ctx.fillText('← Objekt',FL+6,BED_Y-sim.layer*LH-2);
+  }
+}
+
+function drawHead(){
+  const lyY=sim.st==='done'?BED_Y-NL*LH:BED_Y-(Math.min(sim.layer,NL-1)+1)*LH;
+  const ntY=lyY, htY=ntY-NH-HH;
+  const hcx=sim.st==='done'?PCX:sim.hx;
+  ctx.strokeStyle='#3A5060'; ctx.lineWidth=6;
+  ctx.beginPath(); ctx.moveTo(RL,htY+HH/2); ctx.lineTo(RR,htY+HH/2); ctx.stroke();
+  if(sim.st!=='done'){
+    ctx.strokeStyle='#EBA882'; ctx.lineWidth=3; ctx.setLineDash([5,5]);
+    ctx.beginPath(); ctx.moveTo(hcx,FT+14); ctx.lineTo(hcx,htY); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.font='600 10px -apple-system,Arial'; ctx.fillStyle='#9E4E22';
+    ctx.textAlign='left'; ctx.textBaseline='top';
+    ctx.fillText('Filament',Math.min(hcx+5,RR-58),FT+16);
+  }
+  ctx.fillStyle='#2C3D4C'; ctx.beginPath(); rr(hcx-HW/2,htY,HW,HH,5); ctx.fill();
+  ctx.fillStyle='rgba(255,255,255,.14)'; ctx.fillRect(hcx-HW/2+4,htY+4,HW-8,5);
+  ctx.fillStyle='#6A8599';
+  ctx.beginPath(); ctx.arc(hcx-11,htY+HH/2,4,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(hcx+11,htY+HH/2,4,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#9E4E22';
+  ctx.beginPath(); ctx.moveTo(hcx-7,htY+HH); ctx.lineTo(hcx+7,htY+HH);
+  ctx.lineTo(hcx,ntY); ctx.closePath(); ctx.fill();
+  if(sim.nozzle>120){
+    const a=Math.min((sim.nozzle-120)/80,1)*.55;
+    const g=ctx.createRadialGradient(hcx,ntY,0,hcx,ntY,13);
+    g.addColorStop(0,'rgba(217,122,74,'+a+')'); g.addColorStop(1,'rgba(217,122,74,0)');
+    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(hcx,ntY,13,0,Math.PI*2); ctx.fill();
+  }
+  ctx.font='bold 9px -apple-system,Arial'; ctx.fillStyle='rgba(255,255,255,.9)';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText('KOPF',hcx,htY+HH/2);
+  if(sim.nozzle>60&&sim.st!=='done'){
+    ctx.font='600 10px -apple-system,Arial'; ctx.fillStyle='#9E4E22';
+    ctx.textAlign=sim.hx<PCX?'right':'left'; ctx.textBaseline='top';
+    const tx=sim.hx<PCX?hcx-HW/2-3:hcx+HW/2+3;
+    ctx.fillText('Düse '+Math.round(sim.nozzle)+'°C',tx,htY+4);
+  }
+}
+
+function drawIdleHint(){
+  const cy=(FT+BED_Y)/2;
+  ctx.font='bold 16px -apple-system,Arial'; ctx.fillStyle='#6A8599';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText('🖨️  Drucker bereit',PCX,cy-14);
+  ctx.font='14px -apple-system,Arial'; ctx.fillStyle='#8A9BA8';
+  ctx.fillText('Drücke „Starten"',PCX,cy+14);
+}
+
+function drawDoneBanner(){
+  const cy=FT+55;
+  ctx.fillStyle='rgba(77,139,63,.92)'; ctx.beginPath();
+  rr(PCX-135,cy-24,270,48,8); ctx.fill();
+  ctx.font='bold 16px -apple-system,Arial'; ctx.fillStyle='white';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText('✅ Druck fertig!',PCX,cy-6);
+  ctx.font='13px -apple-system,Arial';
+  ctx.fillText('Objekt kann abgenommen werden.',PCX,cy+14);
+}
+
+function animate(){
+  if(sim.st==='heating'){
+    sim.nozzle=Math.min(200,sim.nozzle+4);
+    sim.bed=Math.min(60,sim.bed+1.2);
+    if(sim.nozzle>=200&&sim.bed>=60){
+      sim.st='printing'; sim.layer=0; sim.hx=SHAPE[0].L; sim.dir=1;
+    }
+  } else if(sim.st==='printing'){
+    sim.hx+=sim.dir*sim.spd;
+    const sh=SHAPE[sim.layer];
+    if(sim.dir===1&&sim.hx>=sh.R){sim.hx=sh.R; nextLayer();}
+    else if(sim.dir===-1&&sim.hx<=sh.L){sim.hx=sh.L; nextLayer();}
+  }
+  draw(); updateUI();
+  if(sim.st!=='idle'&&sim.st!=='done'&&sim.st!=='paused')
+    sim.animId=requestAnimationFrame(animate);
+}
+
+function nextLayer(){
+  sim.layer++;
+  if(sim.layer>=NL){sim.st='done'; return;}
+  sim.dir*=-1;
+  sim.hx=sim.dir===1?SHAPE[sim.layer].L:SHAPE[sim.layer].R;
+}
+
+const $e=id=>document.getElementById(id);
+
+function updateUI(){
+  const pct=Math.min(100,Math.round(sim.layer/NL*100));
+  $e('d-layer').textContent=sim.st==='idle'?'– / 42':`${sim.layer} / ${NL}`;
+  $e('d-progress').textContent=pct+' %';
+  $e('d-nozzle').textContent=Math.round(sim.nozzle)+' °C';
+  $e('d-bed').textContent=Math.round(sim.bed)+' °C';
+  $e('d-nozzle').className='data-value'+(sim.nozzle>80?' hot':'');
+  $e('d-bed').className='data-value'+(sim.bed>30?' hot':'');
+  $e('prog-bar').style.width=pct+'%';
+  const sb=$e('status-box');
+  sb.className='status-box';
+  if(sim.st==='done') sb.classList.add('success');
+  if(sim.st==='heating') sb.classList.add('warning');
+  sb.textContent=statusMsg();
+  const running=sim.st==='printing'||sim.st==='heating';
+  $e('btn-start').disabled=running;
+  $e('btn-pause').disabled=!running;
+  $e('btn-start').textContent=sim.st==='paused'?'▶ Weiter':sim.st==='done'?'▶ Nochmal':'▶ Starten';
+  if(sim.st==='done') $e('btn-start').disabled=false;
+}
+
+function statusMsg(){
+  const p=sim.layer/NL;
+  if(sim.st==='idle')    return '🖨️ Drücke „Starten", um die Simulation zu beginnen!';
+  if(sim.st==='paused')  return '⏸ Druck pausiert. Drücke „Weiter" zum Fortfahren.';
+  if(sim.st==='done')    return '✅ Fertig! Das Objekt kann jetzt vorsichtig abgenommen werden.';
+  if(sim.st==='heating') return sim.nozzle<200
+    ?'🔥 Düse aufheizen… '+Math.round(sim.nozzle)+' °C / 200 °C'
+    :'♨️ Druckbett aufheizen… '+Math.round(sim.bed)+' °C / 60 °C';
+  if(p<.10) return '🟧 Erste Schichten: Das Fundament wird aufgebaut.';
+  if(p<.30) return '🔄 Der Druckkopf fährt hin und her – Schicht für Schicht.';
+  if(p<.50) return '📐 Die Wände des Hauses wachsen nach oben.';
+  if(p<.62) return '🌬️ Untere Schichten kühlen ab und werden fest.';
+  if(p<.82) return '🏠 Das Dach entsteht – die Schichten werden schmaler!';
+  if(p<.97) return '🎯 Dachspitze – fast fertig!';
+  return '⚡ Letzte Schichten…';
+}
+
+$e('btn-start').addEventListener('click',()=>{
+  if(sim.st==='paused'){sim.st='printing'; sim.spd=getSpd(); animate();}
+  else{if(sim.animId)cancelAnimationFrame(sim.animId); sim=mkSim(); sim.st='heating'; sim.spd=getSpd(); animate();}
+});
+$e('btn-pause').addEventListener('click',()=>{
+  if(sim.st==='printing'||sim.st==='heating'){
+    if(sim.animId)cancelAnimationFrame(sim.animId); sim.st='paused'; draw(); updateUI();
+  }
+});
+$e('btn-reset').addEventListener('click',()=>{
+  if(sim.animId)cancelAnimationFrame(sim.animId); sim=mkSim(); draw(); updateUI();
+});
+$e('speed-slider').addEventListener('input',()=>{ sim.spd=getSpd(); });
+draw(); updateUI();
+
+// =============== SLICER TAB ===============
+
+// -- Layer Height --
+const LH_DATA = {
+  fine:   { label:'0,1 mm – sehr fein',   stripeH:3, stripeGap:1,
+    fx:[{cls:'good',t:'🌟 glatte Oberfläche'},{cls:'warn',t:'⏱️ sehr lange Druckzeit'},{cls:'info',t:'viele Schichten nötig'}]},
+  medium: { label:'0,2 mm – Standard',     stripeH:6, stripeGap:1,
+    fx:[{cls:'good',t:'👍 gute Balance'},{cls:'good',t:'⏱️ normale Druckzeit'},{cls:'info',t:'für die meisten Objekte ideal'}]},
+  coarse: { label:'0,3 mm – grob',         stripeH:10,stripeGap:1,
+    fx:[{cls:'warn',t:'⚠️ sichtbare Stufen'},{cls:'good',t:'⚡ kurze Druckzeit'},{cls:'info',t:'für Prototypen ok'}]},
+};
+let activeLH = 'fine';
+
+function setLayerHeight(key, btn) {
+  activeLH = key;
+  document.querySelectorAll('.pill').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  renderLayerPreview();
+  renderLayerEffects();
+}
+
+function renderLayerPreview() {
+  const d = LH_DATA[activeLH];
+  const box = $e('layer-preview');
+  box.innerHTML = '';
+  const total = 72;
+  let y = 0;
+  while(y < total) {
+    const stripe = document.createElement('div');
+    stripe.className = 'lp-stripe';
+    stripe.style.height = d.stripeH + 'px';
+    box.appendChild(stripe);
+    y += d.stripeH;
+    const gap = document.createElement('div');
+    gap.className = 'lp-gap';
+    gap.style.height = d.stripeGap + 'px';
+    box.appendChild(gap);
+    y += d.stripeGap;
+  }
+}
+
+function renderLayerEffects() {
+  const d = LH_DATA[activeLH];
+  $e('layer-effects').innerHTML = d.fx.map(f=>
+    `<span class="effect-tag ${f.cls}">${f.t}</span>`
+  ).join('');
+}
+
+// -- Infill --
+function updateInfill(val) {
+  $e('infill-val').textContent = val + ' %';
+  drawInfillCanvas(+val);
+  const el = $e('infill-effects');
+  const v = +val;
+  let fx = [];
+  if(v<=15) fx=[{cls:'warn',t:'🪶 sehr leicht'},{cls:'warn',t:'⚠️ wenig stabil'},{cls:'good',t:'⚡ schnell & sparsam'}];
+  else if(v<=40) fx=[{cls:'good',t:'👍 Standard – gut stabil'},{cls:'good',t:'🏃 normale Druckzeit'}];
+  else if(v<=70) fx=[{cls:'good',t:'💪 sehr stabil'},{cls:'warn',t:'⏱️ längere Druckzeit'},{cls:'warn',t:'🏋️ schwerer'}];
+  else if(v<100) fx=[{cls:'good',t:'🦾 extrem stabil'},{cls:'warn',t:'🐢 langsam'},{cls:'warn',t:'viel Material'}];
+  else fx=[{cls:'good',t:'🧱 vollmassiv'},{cls:'warn',t:'🐢 sehr langsam'},{cls:'warn',t:'maximaler Materialverbrauch'}];
+  el.innerHTML = fx.map(f=>`<span class="effect-tag ${f.cls}">${f.t}</span>`).join('');
+}
+
+function drawInfillCanvas(pct) {
+  const c = $e('infill-canvas');
+  const cx = c.getContext('2d');
+  const W=c.width, H=c.height;
+  cx.clearRect(0,0,W,H);
+  cx.fillStyle='#E8ECF0'; cx.fillRect(0,0,W,H);
+  const pad=10, iw=W-pad*2, ih=H-pad*2;
+
+  // Outer wall (always solid, 2px)
+  const wallW=6;
+  cx.fillStyle='#2C3D4C';
+  cx.fillRect(pad,pad,iw,wallW);          // top
+  cx.fillRect(pad,H-pad-wallW,iw,wallW);  // bottom
+  cx.fillRect(pad,pad,wallW,ih);          // left
+  cx.fillRect(W-pad-wallW,pad,wallW,ih);  // right
+
+  // Interior infill
+  const ix=pad+wallW, iy=pad+wallW, iw2=iw-wallW*2, ih2=ih-wallW*2;
+  if(pct>=100){
+    cx.fillStyle='#3E5668';
+    cx.fillRect(ix,iy,iw2,ih2);
+  } else {
+    // Grid pattern, density by spacing
+    const spacing = Math.max(4, Math.round((100/pct)*4));
+    cx.strokeStyle='#3E5668'; cx.lineWidth=1.5;
+    for(let x=ix; x<=ix+iw2; x+=spacing){
+      cx.beginPath(); cx.moveTo(x,iy); cx.lineTo(x,iy+ih2); cx.stroke();
+    }
+    for(let y=iy; y<=iy+ih2; y+=spacing){
+      cx.beginPath(); cx.moveTo(ix,y); cx.lineTo(ix+iw2,y); cx.stroke();
+    }
+  }
+
+  // Percentage label
+  cx.font='bold 13px -apple-system,Arial';
+  cx.fillStyle=pct>=70?'white':'#2C3D4C';
+  cx.textAlign='center'; cx.textBaseline='middle';
+  cx.fillText(pct+'% Füllung',W/2,H/2);
+
+  // Border
+  cx.strokeStyle='#2C3D4C'; cx.lineWidth=1.5;
+  cx.strokeRect(pad,pad,iw,ih);
+}
+
+// -- Supports --
+let supportsOn = false;
+
+function setSupports(on) {
+  supportsOn = on;
+  $e('supp-off').className='toggle-btn'+(on?'':' active-off');
+  $e('supp-on').className='toggle-btn'+(on?' active-on':'');
+  drawSupportCanvas($e('supp-canvas-off'), false, on);
+  drawSupportCanvas($e('supp-canvas-on'),  true,  on);
+  const el=$e('supp-effect');
+  if(on){
+    el.innerHTML='<span class="effect-tag good">✅ Überhänge gelingen</span><span class="effect-tag warn">⚠️ Stützen müssen entfernt werden</span><span class="effect-tag info">🐢 etwas längere Druckzeit</span>';
+  } else {
+    el.innerHTML='<span class="effect-tag info">⚡ schneller Druck</span><span class="effect-tag warn">⚠️ steile Überhänge können misslingen</span>';
+  }
+}
+
+function drawSupportCanvas(c, withSupports, isActive) {
+  const cx=c.getContext('2d');
+  const W=c.width, H=c.height;
+  cx.clearRect(0,0,W,H);
+  cx.fillStyle='#E8ECF0'; cx.fillRect(0,0,W,H);
+
+  // T-shape: vertical tower + horizontal overhang (right side)
+  const baseX=30, baseY=H-20, baseW=60, baseH=60;
+  const armX=baseX+baseW, armY=baseY-baseH, armW=70, armH=20;
+
+  // Support structure (drawn first, behind object)
+  if(withSupports){
+    cx.fillStyle='rgba(193,123,0,.25)';
+    for(let x=armX+4;x<armX+armW;x+=6){
+      cx.fillRect(x, armY+armH, 2, baseY-(armY+armH));
+    }
+    cx.strokeStyle='#C17B00'; cx.lineWidth=1; cx.setLineDash([2,2]);
+    cx.strokeRect(armX,armY+armH,armW,baseY-(armY+armH));
+    cx.setLineDash([]);
+  }
+
+  // Object body
+  cx.fillStyle=isActive===withSupports?'#3E5668':'#7A9AB0';
+  cx.fillRect(baseX,armY,baseW,baseH);     // vertical tower
+  cx.fillRect(armX,armY,armW,armH);        // horizontal arm (overhang)
+
+  // Overhang arrow + warning (when no supports)
+  if(!withSupports){
+    cx.font='bold 20px -apple-system,Arial';
+    cx.fillStyle='#C0392B';
+    cx.textAlign='center'; cx.textBaseline='middle';
+    cx.fillText('↓',armX+armW/2,armY+armH+14);
+  }
+
+  // Label
+  cx.font='bold 10px -apple-system,Arial';
+  cx.fillStyle=withSupports?'#4D8B3F':'#5A6A78';
+  cx.textAlign='center'; cx.textBaseline='top';
+  cx.fillText(withSupports?'✅ mit Stützen':'ohne Stützen',W/2,4);
+}
+
+// Init slicer UI
+renderLayerPreview();
+renderLayerEffects();
+updateInfill(20);
+setSupports(false);
+drawSupportCanvas($e('supp-canvas-off'),false,false);
+drawSupportCanvas($e('supp-canvas-on'), true, false);
+
+// =============== QUIZ ===============
+const QUIZ_DATA=[
+  {
+    q:'Wie heißt das Kunststoffmaterial beim FDM-3D-Druck?',
+    opts:[
+      {t:'A) Papier',   ok:false, fb:'Papier kann ein FDM-Drucker nicht verarbeiten. Er braucht einen Kunststofffaden.'},
+      {t:'B) Filament', ok:true,  fb:'Richtig! Filament ist der Kunststofffaden – meistens aus PLA oder ABS.'},
+      {t:'C) Tinte',    ok:false, fb:'Tinte gehört zum Tintenstrahldrucker. Beim 3D-Drucker wird Kunststoff eingeschmolzen.'},
+      {t:'D) Gips',     ok:false, fb:'Gips wird bei anderen Druckverfahren genutzt, aber nicht beim Standard-FDM-Druck.'},
+    ],
+  },
+  {
+    q:'Was macht ein Slicer-Programm (z.B. Cura)?',
+    opts:[
+      {t:'A) Es zeichnet das 3D-Modell',                       ok:false, fb:'Zum Zeichnen nutzt man CAD-Programme wie TinkerCAD. Der Slicer bereitet das fertige Modell vor.'},
+      {t:'B) Es teilt das 3D-Modell digital in Schichten auf', ok:true,  fb:'Genau! Der Slicer zerlegt das Modell in dünne Schichten und erzeugt daraus den G-Code für den Drucker.'},
+      {t:'C) Es schneidet das fertige Objekt in Stücke',       ok:false, fb:'Obwohl der Name das andeutet: Der Slicer arbeitet am Computer am digitalen Modell – nicht am fertigen Objekt.'},
+      {t:'D) Es steuert nur die Düsentemperatur',              ok:false, fb:'Die Temperatur wird im Slicer zwar eingestellt, aber seine Hauptaufgabe ist das Aufteilen in Schichten.'},
+    ],
+  },
+  {
+    q:'Was bedeutet eine geringere Schichthöhe im Slicer (z.B. 0,1 mm statt 0,3 mm)?',
+    opts:[
+      {t:'A) Der Druck wird schneller und gröber',      ok:false, fb:'Genau umgekehrt! Dünne Schichten = feineres Ergebnis, aber deutlich längere Druckzeit.'},
+      {t:'B) Das Objekt wird stabiler und schwerer',    ok:false, fb:'Die Festigkeit wird hauptsächlich durch die Fülldichte (Infill) bestimmt, nicht durch die Schichthöhe.'},
+      {t:'C) Die Oberfläche wird glatter, der Druck dauert länger', ok:true, fb:'Richtig! Dünne Schichten ergeben eine glattere Oberfläche – brauchen aber viel mehr Zeit zum Drucken.'},
+      {t:'D) Das Modell wird größer',                  ok:false, fb:'Die Schichthöhe ändert nichts an der Größe des Objekts – nur an der Qualität und Druckzeit.'},
+    ],
+  },
+  {
+    q:'Welche Datei erzeugt der Slicer, die der 3D-Drucker direkt versteht?',
+    opts:[
+      {t:'A) Eine .stl-Datei',  ok:false, fb:'Die .stl-Datei ist der Input – das 3D-Modell, das in den Slicer geladen wird.'},
+      {t:'B) Eine .jpg-Datei',  ok:false, fb:'JPG ist ein Bildformat. Der Drucker braucht Bewegungsbefehle, keine Bilder.'},
+      {t:'C) Eine G-Code-Datei', ok:true, fb:'Richtig! Der Slicer erzeugt G-Code – eine Textdatei mit tausenden Befehlen: Wohin fährt der Kopf, wie heiß ist die Düse, wie viel Filament kommt raus.'},
+      {t:'D) Eine .pdf-Datei',  ok:false, fb:'PDF ist ein Dokumentformat. Der 3D-Drucker braucht G-Code mit Bewegungsbefehlen.'},
+    ],
+  },
+];
+
+let quizState=new Array(QUIZ_DATA.length).fill(null);
+
+function renderQuiz(){
+  const c=$e('quiz-container'); c.innerHTML='';
+  $e('quiz-result').style.display='none';
+  QUIZ_DATA.forEach((frage,fi)=>{
+    const card=document.createElement('div'); card.className='quiz-card';
+    const nr=document.createElement('span'); nr.className='frage-nr';
+    nr.textContent='Frage '+(fi+1)+' von '+QUIZ_DATA.length;
+    const qt=document.createElement('div'); qt.className='frage-text';
+    qt.appendChild(nr); qt.appendChild(document.createTextNode(frage.q));
+    card.appendChild(qt);
+    const fb=document.createElement('div'); fb.className='feedback-box';
+    frage.opts.forEach((opt,oi)=>{
+      const btn=document.createElement('button'); btn.className='antwort-btn';
+      btn.textContent=opt.t;
+      if(quizState[fi]!==null){
+        btn.disabled=true;
+        if(opt.ok) btn.classList.add('richtig');
+        else if(quizState[fi]===oi) btn.classList.add('falsch');
+        if(quizState[fi]===oi){
+          fb.className='feedback-box '+(opt.ok?'feedback-richtig':'feedback-falsch');
+          fb.textContent=(opt.ok?'✅ ':'❌ ')+opt.fb;
+        }
+      }
+      btn.addEventListener('click',()=>{
+        if(quizState[fi]!==null) return;
+        quizState[fi]=oi;
+        card.querySelectorAll('.antwort-btn').forEach((b,bi)=>{
+          b.disabled=true;
+          if(frage.opts[bi].ok) b.classList.add('richtig');
+          else if(bi===oi) b.classList.add('falsch');
+        });
+        fb.className='feedback-box '+(opt.ok?'feedback-richtig':'feedback-falsch');
+        fb.textContent=(opt.ok?'✅ ':'❌ ')+opt.fb;
+        if(quizState.every(a=>a!==null)) setTimeout(showResult,600);
+      });
+      card.appendChild(btn);
+    });
+    card.appendChild(fb); c.appendChild(card);
+  });
+}
+
+function showResult(){
+  const correct=QUIZ_DATA.reduce((n,f,i)=>n+(f.opts[quizState[i]]?.ok?1:0),0);
+  const pct=correct/QUIZ_DATA.length;
+  let icon,msg;
+  if(pct===1)       {icon='⭐⭐⭐';msg='Perfekt! Du hast alles richtig!';}
+  else if(pct>=.75) {icon='⭐⭐';  msg='Sehr gut! Du kennst dich gut aus.';}
+  else if(pct>=.5)  {icon='⭐';    msg='Gut! Schau dir die falschen Antworten nochmal an.';}
+  else              {icon='🔄';    msg='Schau die anderen Tabs nochmal an und versuche es erneut!';}
+  $e('quiz-score').textContent=icon+'  '+correct+' / '+QUIZ_DATA.length+' richtig';
+  $e('quiz-fb').textContent=msg;
+  $e('quiz-result').style.display='block';
+  $e('quiz-result').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function resetQuiz(){
+  quizState=new Array(QUIZ_DATA.length).fill(null); renderQuiz();
+}
+
+renderQuiz();
+</script>
+</body>
+</html>
