@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Projekterweiterung 3D-Druck – WP Technik</title>
+  <style>
+    :root {
+      --col-slate-dark:  #2C3D4C;
+      --col-slate:       #3E5668;
+      --col-slate-pale:  #D0DCE6;
+      --col-slate-ghost: #EEF3F7;
+      --col-rust-dark:   #9E4E22;
+      --col-rust:        #D97A4A;
+      --col-rust-pale:   #F5DDD1;
+      --col-rust-ghost:  #FBF0EB;
+      --col-sage-dark:   #4D8B3F;
+      --col-sage:        #7DBB6F;
+      --col-sage-pale:   #DDF0D8;
+      --col-sage-ghost:  #F0FAF0;
+      --col-warning:     #C17B00;
+      --col-warning-pale:#FFF3CC;
+      --col-warning-text:#5C4400;
+      --col-bg:          #F5F4F1;
+      --col-white:       #FFFFFF;
+      --col-text:        #1E2A35;
+      --col-muted:       #5A6A78;
+      --col-border:      #D4D0C8;
+      --col-shadow:      rgba(44,61,76,0.10);
+      --radius:          16px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+      background: var(--col-bg);
+      color: var(--col-text);
+      font-size: 1rem;
+      line-height: 1.6;
+    }
+
+    :focus-visible {
+      outline: 3px solid var(--col-slate);
+      outline-offset: 3px;
+      border-radius: 4px;
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: linear-gradient(135deg, var(--col-slate-dark), var(--col-slate));
+      color: white;
+      padding: 24px 28px 22px;
+    }
+    .header-inner { max-width: 960px; margin: 0 auto; }
+    .kicker {
+      font-size: 0.72rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--col-slate-pale);
+      margin-bottom: 6px;
+    }
+    header h1 {
+      font-size: clamp(1.6rem, 4vw, 2.6rem);
+      line-height: 1.1;
+      margin-bottom: 8px;
+    }
+    header p {
+      font-size: 1rem;
+      color: #e8f0f6;
+      max-width: 680px;
+    }
+
+    /* ── NAV ── */
+    nav {
+      background: rgba(255,255,255,0.97);
+      border-bottom: 1px solid var(--col-border);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .nav-inner {
+      max-width: 960px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding: 9px 16px;
+    }
+    .nav-inner a {
+      color: var(--col-slate-dark);
+      text-decoration: none;
+      border: 1.5px solid var(--col-slate-pale);
+      background: var(--col-slate-ghost);
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      transition: background 0.15s;
+    }
+    .nav-inner a:hover { background: var(--col-slate-pale); }
+
+    /* ── MAIN ── */
+    main {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 22px 16px 56px;
+    }
+
+    section { margin-bottom: 24px; }
+
+    h2 {
+      font-size: clamp(1.25rem, 2.5vw, 1.8rem);
+      color: var(--col-slate-dark);
+      margin-bottom: 12px;
+      line-height: 1.15;
+    }
+    h3 {
+      font-size: 1.1rem;
+      color: var(--col-slate-dark);
+      margin-bottom: 8px;
+    }
+    p { margin-bottom: 8px; }
+
+    /* ── GRID ── */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 14px;
+    }
+    .col-12 { grid-column: span 12; }
+    .col-6  { grid-column: span 6; }
+    .col-4  { grid-column: span 4; }
+    .col-8  { grid-column: span 8; }
+
+    /* ── CARDS ── */
+    .card {
+      background: var(--col-white);
+      border: 1px solid var(--col-border);
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: 0 3px 14px var(--col-shadow);
+    }
+    .card-rust  { border-left: 5px solid var(--col-rust);      background: var(--col-rust-ghost); }
+    .card-sage  { border-left: 5px solid var(--col-sage);      background: var(--col-sage-ghost); }
+    .card-slate { border-left: 5px solid var(--col-slate);     background: var(--col-slate-ghost); }
+    .card-warn  { border-left: 5px solid var(--col-warning);   background: var(--col-warning-pale); }
+
+    /* ── BADGES ── */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      margin-bottom: 8px;
+    }
+    .badge-slate { background: var(--col-slate-pale); color: var(--col-slate-dark); }
+    .badge-rust  { background: var(--col-rust-pale);  color: var(--col-rust-dark); }
+    .badge-sage  { background: var(--col-sage-pale);  color: var(--col-sage-dark); }
+    .badge-warn  { background: var(--col-warning-pale); color: var(--col-warning-text); }
+
+    /* ── CHOICE CARDS (Wahlangebote) ── */
+    .choice-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+    .choice-card {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .emoji { font-size: 1.9rem; line-height: 1; margin-bottom: 2px; }
+    .result-tag {
+      margin-top: auto;
+      background: rgba(255,255,255,0.7);
+      border: 1px dashed var(--col-border);
+      border-radius: 10px;
+      padding: 8px 10px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--col-slate-dark);
+    }
+    .result-tag::before { content: "📦 "; }
+
+    /* ── TASK BOX ── */
+    .task-box {
+      background: var(--col-white);
+      border: 2px solid var(--col-slate-pale);
+      border-radius: 14px;
+      padding: 14px 16px;
+      margin-top: 10px;
+    }
+    .task-box strong { color: var(--col-rust-dark); }
+
+    /* ── FORMEL ── */
+    .formula {
+      font-size: 1.2rem;
+      font-weight: 900;
+      color: var(--col-rust-dark);
+      padding: 12px;
+      background: var(--col-white);
+      border-radius: 12px;
+      border: 2px solid var(--col-rust-pale);
+      text-align: center;
+      margin: 10px 0;
+    }
+
+    /* ── RECHNER ── */
+    .calc-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      align-items: end;
+      margin-top: 12px;
+    }
+    label {
+      font-weight: 700;
+      color: var(--col-slate-dark);
+      display: block;
+      margin-bottom: 4px;
+      font-size: 0.9rem;
+    }
+    input[type="number"] {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 2px solid var(--col-border);
+      font-size: 1rem;
+      background: var(--col-white);
+    }
+    input[type="number"]:focus {
+      outline: 3px solid var(--col-slate-pale);
+      border-color: var(--col-slate);
+    }
+    .calc-result {
+      background: var(--col-sage-pale);
+      color: var(--col-sage-dark);
+      border: 2px solid var(--col-sage);
+      border-radius: 12px;
+      padding: 14px;
+      font-size: 1.1rem;
+      font-weight: 900;
+      text-align: center;
+    }
+
+    /* ── TABELLEN ── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      border-radius: 12px;
+      overflow: hidden;
+      background: var(--col-white);
+      font-size: 0.92rem;
+    }
+    th, td {
+      border: 1px solid var(--col-border);
+      padding: 9px 12px;
+      vertical-align: top;
+      text-align: left;
+    }
+    th {
+      background: var(--col-slate);
+      color: white;
+      font-size: 0.85rem;
+    }
+    tr:nth-child(even) td { background: #faf9f7; }
+
+    /* ── LISTEN ── */
+    ul { margin: 6px 0 0 20px; }
+    li { margin-bottom: 5px; }
+
+    /* ── SATZSTARTER (2 Spalten) ── */
+    .starter-list {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      list-style: none;
+      margin: 8px 0 0 0;
+    }
+    .starter-list li {
+      background: var(--col-sage-ghost);
+      border-left: 3px solid var(--col-sage);
+      border-radius: 0 8px 8px 0;
+      padding: 8px 10px;
+      font-size: 0.9rem;
+      margin: 0;
+    }
+
+    /* ── PRÜFFRAGEN (Checks) ── */
+    .check-list {
+      list-style: none;
+      margin: 8px 0 0 0;
+    }
+    .check-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--col-border);
+      font-size: 0.92rem;
+    }
+    .check-list li:last-child { border-bottom: none; }
+    .check-list li::before {
+      content: "□";
+      font-size: 1.1rem;
+      color: var(--col-sage-dark);
+      flex-shrink: 0;
+      line-height: 1.2;
+    }
+
+    @media (max-width: 720px) {
+      .col-6, .col-4, .col-8 { grid-column: span 12; }
+      .choice-grid { grid-template-columns: 1fr 1fr; }
+      .calc-row { grid-template-columns: 1fr; }
+      .starter-list { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 480px) {
+      .choice-grid { grid-template-columns: 1fr; }
+    }
+    @media print {
+      nav { display: none; }
+      body { background: white; font-size: 12px; }
+      main { padding: 12px; max-width: none; }
+      .card { box-shadow: none; break-inside: avoid; }
+      section { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="kicker">WP Technik · 3D-Druck · Projekterweiterung</div>
+    <h1>3D-Druck – neue Angebote</h1>
+    <p>Nicht alle im Kurs wollen das Reisespiel-Projekt weitermachen. Deshalb gibt es jetzt mehr Möglichkeiten – such dir etwas aus, das dich wirklich interessiert.</p>
+  </div>
+</header>
+
+<nav aria-label="Seitennavigation">
+  <div class="nav-inner">
+    <a href="#auftrag">Auftrag</a>
+    <a href="#wahlangebote">Wahlangebote</a>
+    <a href="#fidget">Fidget Toy</a>
+    <a href="#moebel">Möbel 1:15</a>
+    <a href="#massstab">Maßstab-Rechner</a>
+    <a href="#abgabe">Abgabe</a>
+  </div>
+</nav>
+
+<main>
+
+  <!-- ── AUFTRAG ── -->
+  <section id="auftrag">
+    <div class="card card-rust">
+      <span class="badge badge-rust">Dein Auftrag</span>
+      <h2>Worum geht es?</h2>
+      <p>Das Reisespiel-Projekt läuft weiter – aber nicht für alle. Wer keine Lust mehr hat, weiterzumachen, wählt jetzt ein anderes Angebot. Das ist kein Problem, sondern eine echte Chance: Such dir etwas aus, das dich interessiert.</p>
+      <div class="task-box">
+        <strong>Grundauftrag:</strong> Erstelle ein Produkt zum Thema 3D-Druck. Das kann ein 3D-Modell, ein Plakat, eine Präsentation oder ein Schaubild sein. Du sollst erklären können, <em>was</em> du gemacht hast und <em>was</em> du dabei gelernt hast.
+      </div>
+    </div>
+  </section>
+
+  <!-- ── WAHLANGEBOTE ── -->
+  <section id="wahlangebote">
+    <h2>Wähle dein Angebot</h2>
+    <div class="choice-grid">
+
+      <article class="card card-slate choice-card">
+        <div class="emoji">🧩</div>
+        <span class="badge badge-slate">Gestalten</span>
+        <h3>Fidget Toy</h3>
+        <p>Wähle ein fertiges Modell aus der Bibliothek, passe es an und erkläre, warum es als Fidget Toy funktioniert.</p>
+        <div class="result-tag">druckbares Fidget Toy</div>
+      </article>
+
+      <article class="card card-slate choice-card">
+        <div class="emoji">🏷️</div>
+        <span class="badge badge-slate">Gestalten</span>
+        <h3>Namensschild</h3>
+        <p>Erstelle ein Namensschild, einen Anhänger oder ein Schild für eine Box – mit eigenen Formen oder Bibliotheksteilen.</p>
+        <div class="result-tag">druckbares Namensschild</div>
+      </article>
+
+      <article class="card card-slate choice-card">
+        <div class="emoji">⚪</div>
+        <span class="badge badge-slate">Gestalten</span>
+        <h3>Kugellabyrinth</h3>
+        <p>Baue ein kleines Labyrinth mit Wegen, Wänden, Start und Ziel.</p>
+        <div class="result-tag">druckbares Kugellabyrinth</div>
+      </article>
+
+      <article class="card card-sage choice-card">
+        <div class="emoji">🕰️</div>
+        <span class="badge badge-sage">Erklären</span>
+        <h3>Geschichte des 3D-Drucks</h3>
+        <p>Wann wurde 3D-Druck entwickelt? Wo wird er heute genutzt? Was ist in der Zukunft möglich?</p>
+        <div class="result-tag">Präsentation, Zeitstrahl oder Plakat</div>
+      </article>
+
+      <article class="card card-sage choice-card">
+        <div class="emoji">🌱</div>
+        <span class="badge badge-sage">Vergleichen</span>
+        <h3>PLA und ABS</h3>
+        <p>Vergleiche die beiden Kunststoffe und erkläre, warum PLA an einer Umweltschule besser passt.</p>
+        <div class="result-tag">Tabelle, Text oder Präsentation</div>
+      </article>
+
+      <article class="card card-sage choice-card">
+        <div class="emoji">🖨️</div>
+        <span class="badge badge-sage">Verstehen</span>
+        <h3>Aufbau eines 3D-Druckers</h3>
+        <p>Erkläre die wichtigsten Bauteile: Filament, Extruder, Hotend, Druckbett, Achsen, Lüfter.</p>
+        <div class="result-tag">Schaubild oder Lernplakat</div>
+      </article>
+
+      <article class="card card-warn choice-card" style="grid-column: span 3;">
+        <div class="emoji">🛋️</div>
+        <span class="badge badge-warn">Anderer Technikkurs</span>
+        <h3>Möbelstück im Maßstab 1:15</h3>
+        <p>Erstelle ein Möbelstück für ein Zimmermodell. Rechne die echten Maße in das Modellmaß (mm) um.</p>
+        <div class="result-tag">druckbares Möbelstück für ein Zimmermodell</div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ── FIDGET TOY ── -->
+  <section id="fidget">
+    <div class="grid">
+      <div class="card card-rust col-12">
+        <span class="badge badge-rust">Fidget Toy</span>
+        <h2>Fertige Modelle sind erlaubt</h2>
+        <p>Du musst nichts von Null entwerfen. Wähle ein Modell aus der Bibliothek, passe es an und erkläre deine Entscheidung.</p>
+        <table style="margin-top: 10px;">
+          <thead>
+            <tr><th>Was darfst du?</th><th>Was soll sichtbar werden?</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Fertiges Modell aus der Bibliothek wählen</td><td>Du kannst erklären, warum es als Fidget Toy geeignet ist.</td></tr>
+            <tr><td>Modell vergrößern, verkleinern oder drehen</td><td>Das Modell liegt gut in der Hand und ist druckbar.</td></tr>
+            <tr><td>Mehrere Teile kombinieren</td><td>Du erzeugst eine eigene Variante.</td></tr>
+            <tr><td>Namen, Symbole oder Muster ergänzen</td><td>Das Fidget Toy wird persönlicher oder funktionaler.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card col-6">
+        <h3>💡 Ideen</h3>
+        <ul>
+          <li>Drehkreisel</li>
+          <li>Spinnerform</li>
+          <li>Textur-Fidget mit Noppen oder Rillen</li>
+          <li>Klick- oder Schiebeelement</li>
+          <li>Kleines Objekt zum Drehen oder Rollen</li>
+        </ul>
+      </div>
+
+      <div class="card col-6">
+        <h3>✅ Prüffragen vor dem Druck</h3>
+        <ul class="check-list">
+          <li>Ist das Modell groß genug?</li>
+          <li>Sind dünne Stellen stabil?</li>
+          <li>Liegt es gut in der Hand?</li>
+          <li>Hat es eine erkennbare Fidget-Funktion?</li>
+          <li>Kannst du erklären, warum du es gewählt hast?</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── MÖBEL ── -->
+  <section id="moebel">
+    <div class="grid">
+      <div class="card card-warn col-12">
+        <span class="badge badge-warn">Zimmermodell</span>
+        <h2>Möbelstück im Maßstab 1:15</h2>
+        <p>Erstelle ein Möbelstück für ein Zimmermodell. Du kannst ein Bibliotheksmodell nutzen, es verändern oder ein eigenes bauen.</p>
+        <div class="task-box">
+          <strong>Wichtig:</strong> 3D-Druck arbeitet in Millimetern. Rechne echte Maße zuerst in mm um, dann teile durch 15. Den Rechner findest du weiter unten. 👇
+        </div>
+      </div>
+
+      <div class="card col-6">
+        <h3>📋 Mögliche Möbelstücke</h3>
+        <table>
+          <thead><tr><th>Möbel</th><th>Einfacher Aufbau</th></tr></thead>
+          <tbody>
+            <tr><td>Bett</td><td>Quader als Matratze, Kopfteil, Füße</td></tr>
+            <tr><td>Tisch</td><td>Tischplatte + vier Beine</td></tr>
+            <tr><td>Stuhl</td><td>Sitzfläche, Beine, Rückenlehne</td></tr>
+            <tr><td>Sofa</td><td>Sitzfläche, Rückenlehne, Armlehnen</td></tr>
+            <tr><td>Regal</td><td>Kasten mit Fächern</td></tr>
+            <tr><td>Schrank</td><td>Quader mit Türen und Griffen</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card col-6">
+        <h3>✅ Prüffragen für dein Möbelstück</h3>
+        <ul class="check-list">
+          <li>Passt das Möbelstück in ein Zimmermodell?</li>
+          <li>Hast du die Maße in mm umgerechnet?</li>
+          <li>Hast du durch 15 geteilt?</li>
+          <li>Sind dünne Teile (Beine, Griffe) stabil genug?</li>
+          <li>Kannst du erklären, welches Möbelstück du gebaut hast?</li>
+          <li>Passt die Größe zu anderen Möbeln im Raum?</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── MASSSTAB + RECHNER ── -->
+  <section id="massstab">
+    <div class="grid">
+      <div class="card card-warn col-7">
+        <span class="badge badge-warn">Maßstab 1:15</span>
+        <h2>Maße umrechnen</h2>
+        <p>Maßstab 1:15 bedeutet: Das Modell ist 15× kleiner als das Original.</p>
+        <div class="formula">echtes Maß in cm × 10 ÷ 15 = Modellmaß in mm</div>
+        <table>
+          <thead>
+            <tr><th>Echtes Maß</th><th>Rechnung</th><th>Modell (mm)</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>200 cm Bettlänge</td><td>200 × 10 ÷ 15</td><td>≈ 133 mm</td></tr>
+            <tr><td>75 cm Tischhöhe</td><td>75 × 10 ÷ 15</td><td>50 mm</td></tr>
+            <tr><td>45 cm Sitzhöhe</td><td>45 × 10 ÷ 15</td><td>30 mm</td></tr>
+            <tr><td>180 cm Schrankhöhe</td><td>180 × 10 ÷ 15</td><td>120 mm</td></tr>
+            <tr><td>60 cm Regaltiefe</td><td>60 × 10 ÷ 15</td><td>40 mm</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card col-5" style="align-self: start;">
+        <h3>🧮 Mini-Rechner</h3>
+        <p style="font-size: 0.85rem; color: var(--col-muted); margin-bottom: 4px;">Gib ein echtes Maß in cm ein.</p>
+        <div class="calc-row">
+          <div>
+            <label for="realCm">Echtes Maß in cm</label>
+            <input id="realCm" type="number" min="0" step="0.1" placeholder="z. B. 90" />
+          </div>
+          <div class="calc-result" id="calcResult" role="status" aria-live="polite">Modellmaß: – mm</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── ABGABE ── -->
+  <section id="abgabe">
+    <div class="grid">
+      <div class="card card-slate col-6">
+        <span class="badge badge-slate">Abgabe</span>
+        <h2>Das gibst du ab</h2>
+        <ul class="check-list">
+          <li>Dein fertiges 3D-Modell oder Lernprodukt</li>
+          <li>Kurze Erklärung deiner Idee</li>
+          <li>Bei 3D-Modellen: Begründung, warum es druckbar ist</li>
+          <li>Bei Möbeln: mindestens 3 umgerechnete Maße in mm</li>
+          <li>Kurze Reflexion (s. Satzstarter)</li>
+        </ul>
+      </div>
+
+      <div class="card card-sage col-6">
+        <span class="badge badge-sage">Reflexion</span>
+        <h2>Satzstarter</h2>
+        <ul class="starter-list">
+          <li>Ich habe dieses Angebot gewählt, weil …</li>
+          <li>Ich habe gelernt, dass 3D-Druck …</li>
+          <li>Mein Produkt funktioniert gut, weil …</li>
+          <li>Schwierig war für mich …</li>
+          <li>Beim nächsten Mal würde ich …</li>
+          <li>Für den Druck muss ich beachten, dass …</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<script>
+  const input = document.getElementById("realCm");
+  const result = document.getElementById("calcResult");
+  input.addEventListener("input", () => {
+    const v = parseFloat(input.value);
+    if (Number.isNaN(v) || v <= 0) {
+      result.textContent = "Modellmaß: – mm";
+    } else {
+      const mm = Math.round(v * 10 / 15 * 10) / 10;
+      result.textContent = "Modellmaß: " + mm.toLocaleString("de-DE") + " mm";
+    }
+  });
+</script>
+
+</body>
+</html>
