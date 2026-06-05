@@ -521,8 +521,8 @@
 
   <!-- ── MASSSTAB + RECHNER ── -->
   <section id="massstab">
-    <div class="grid">
-      <div class="card card-warn col-7">
+    <div style="display: grid; grid-template-columns: 3fr 2fr; gap: 14px;">
+      <div class="card card-warn">
         <span class="badge badge-warn">Maßstab 1:15</span>
         <h2>Maße umrechnen</h2>
         <p>Maßstab 1:15 bedeutet: Das Modell ist 15× kleiner als das Original.</p>
@@ -541,16 +541,12 @@
         </table>
       </div>
 
-      <div class="card col-5" style="align-self: start;">
+      <div class="card" style="align-self: start;">
         <h3>🧮 Mini-Rechner</h3>
-        <p style="font-size: 0.85rem; color: var(--col-muted); margin-bottom: 4px;">Gib ein echtes Maß in cm ein.</p>
-        <div class="calc-row">
-          <div>
-            <label for="realCm">Echtes Maß in cm</label>
-            <input id="realCm" type="number" min="0" step="0.1" placeholder="z. B. 90" />
-          </div>
-          <div class="calc-result" id="calcResult" role="status" aria-live="polite">Modellmaß: – mm</div>
-        </div>
+        <p style="font-size: 0.85rem; color: var(--col-muted); margin-bottom: 12px;">Gib ein echtes Maß in cm ein.</p>
+        <label for="realCm">Echtes Maß in cm</label>
+        <input id="realCm" type="number" min="0" step="0.1" placeholder="z. B. 90" style="margin-bottom: 12px;" />
+        <div class="calc-result" id="calcResult" role="status" aria-live="polite">Modellmaß: – mm</div>
       </div>
     </div>
   </section>
